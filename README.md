@@ -8,6 +8,6 @@ Matlab Application for quick and easy self check and calibration of Bluetooth Sy
 * Matlab 2018b (or later)
 * ADB (if used with smartphone)
 * Acoustic Mesurement system (optimally measurement enclosure)
-* Acoustic calibration device
+* Acoustic calibration device (beep)
 
 Version 1.0
