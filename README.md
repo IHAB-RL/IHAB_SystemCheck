@@ -1,6 +1,6 @@
 # IHAB_SystemCheck #
 
-Matlab tool for blablabla
+Matlab Application for quick and easy self check and calibration of Bluetooth System 
 
 
 
