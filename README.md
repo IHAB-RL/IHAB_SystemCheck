@@ -7,5 +7,7 @@ Matlab Application for quick and easy self check and calibration of Bluetooth Sy
 ### Prerequisites: ###
 * Matlab 2018b (or later)
 * ADB (if used with smartphone)
+* Acoustic Mesurement system (optimally measurement enclosure)
+* Acoustic calibration device
 
 Version 1.0
