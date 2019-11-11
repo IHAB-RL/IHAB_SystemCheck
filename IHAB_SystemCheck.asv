@@ -102,8 +102,9 @@ classdef IHAB_SystemCheck < handle
             
             obj.mColors = getColors();
             
+            obj.checkPrerequisites();
             obj.buildGUI();
-            obj.checkDevice();
+%             obj.checkDevice();
             obj.checkAudioHardware();
             
         end
@@ -166,7 +167,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_CheckDevice.Text = 'Check';
-            obj.
+            obj.hButton_CheckDevice.ButtonPushedFcn = @obj.checkDevice;
             
             % Label: Start
             obj.hLabel_Start = uilabel(obj.hPanel_Controls);
@@ -355,6 +356,7 @@ classdef IHAB_SystemCheck < handle
                 2 * obj.nDropDownInterval + obj.nDropDownHeight + obj.nTextHeight, ...
                 obj.nDropDownWidth, ...
                 obj.nDropDownHeight];
+            obj.hDropDown_Input.ValueChangedFcn = @obj.callback_DropDownAudioOuput;
             
             % Label: Input
             obj.hLabel_Input = uilabel(obj.hPanel_Hardware);
@@ -372,10 +374,30 @@ classdef IHAB_SystemCheck < handle
                 obj.nDropDownInterval, ...
                 obj.nDropDownWidth, ...
                 obj.nDropDownHeight];
+            obj.hDropDown_Input.ValueChangedFcn = @obj.callback_DropDownAudioInput;
             
         end
         
-        function [bDevice] = checkDevice(obj)
+        function [bCheck] = checkPrerequisites(obj)
+
+            bCheck = true;
+
+            warning('backtrace', 'off');
+
+            [~, tmp] = system('adb devices');
+            if ~contains(tmp, 'List')
+                warning('ADB is not properly installed on your system.');
+            end
+
+            if verLessThan('matlab', '9.5')
+                warning('Matlab version upgrade is recommended.');
+            end
+
+            warning('backtrace', 'on');
+
+        end
+
+        function [bDevice] = checkDevice(obj, ~, ~)
             
             % NEED TO ADJUST THIS
             
@@ -383,11 +405,11 @@ classdef IHAB_SystemCheck < handle
             sTestDevices = [obj.prefix,'adb devices'];
             [~, sList] = system(sTestDevices);
             if (length(splitlines(sList)) > 4)
-%                 errordlg('Too many devices connected.', 'Error');
+                errordlg('Too many devices connected.', 'Error');
                 bDevice = 0;
                 obj.hLamp_Device.Color = obj.mColors(2, :);
             elseif (length(splitlines(sList)) < 4)
-%                 errordlg('No device connected.', 'Error');
+                errordlg('No device connected.', 'Error');
                 bDevice = 0;
                 obj.hLamp_Device.Color = obj.mColors(2, :);
             else
@@ -428,6 +450,43 @@ classdef IHAB_SystemCheck < handle
             obj.hDropDown_Input.Items = obj.cAudioInput;
             obj.hDropDown_Output.Items = obj.cAudioOutput;
         end
-    end
+        
+        function [] = callback_DropDownAudioOutput(obj, ~ , val)
+            
+            for iDevice = 1 : length(obj.stAudioOutput)
+                if strcmp(obj.stAudioOutput(iDevice).name, val.Value)
+                    obj.nAudioOutput = obj.stAudioOutput(iDevice).id;
+                    break;
+                end
+            end
+        end
+        
+        function [] = callback_DropDownAudioInput(obj, ~ , val)
+            
+            for iDevice = 1 : length(obj.stAudioInput)
+                if strcmp(obj.stAudioInput(iDevice).name, val.Value)
+                    obj.nAudioInput = obj.stAudioInput(iDevice).id;
+                    break;
+                end
+            end
+        end
+        
+        end
 
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 end

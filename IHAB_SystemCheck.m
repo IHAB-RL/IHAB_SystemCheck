@@ -356,6 +356,7 @@ classdef IHAB_SystemCheck < handle
                 2 * obj.nDropDownInterval + obj.nDropDownHeight + obj.nTextHeight, ...
                 obj.nDropDownWidth, ...
                 obj.nDropDownHeight];
+            obj.hDropDown_Output.ValueChangedFcn = @obj.callback_DropDownAudioOutput;
             
             % Label: Input
             obj.hLabel_Input = uilabel(obj.hPanel_Hardware);
@@ -373,6 +374,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nDropDownInterval, ...
                 obj.nDropDownWidth, ...
                 obj.nDropDownHeight];
+            obj.hDropDown_Input.ValueChangedFcn = @obj.callback_DropDownAudioInput;
             
         end
         
@@ -395,8 +397,6 @@ classdef IHAB_SystemCheck < handle
 
         end
 
-% EOF
-        
         function [bDevice] = checkDevice(obj, ~, ~)
             
             % NEED TO ADJUST THIS
@@ -450,6 +450,43 @@ classdef IHAB_SystemCheck < handle
             obj.hDropDown_Input.Items = obj.cAudioInput;
             obj.hDropDown_Output.Items = obj.cAudioOutput;
         end
-    end
+        
+        function [] = callback_DropDownAudioOutput(obj, ~ , val)
+            
+            for iDevice = 1 : length(obj.stAudioOutput)
+                if strcmp(obj.stAudioOutput(iDevice).name, val.Value)
+                    obj.nAudioOutput = obj.stAudioOutput(iDevice).id;
+                    break;
+                end
+            end
+        end
+        
+        function [] = callback_DropDownAudioInput(obj, ~ , val)
+            
+            for iDevice = 1 : length(obj.stAudioInput)
+                if strcmp(obj.stAudioInput(iDevice).name, val.Value)
+                    obj.nAudioInput = obj.stAudioInput(iDevice).id;
+                    break;
+                end
+            end
+        end
+        
+        end
 
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 end
