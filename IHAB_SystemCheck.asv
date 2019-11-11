@@ -19,9 +19,18 @@ classdef IHAB_SystemCheck < handle
         nLampInterval_Vertical;
         nPanelTitleHeight = 18;
         nDropDownInterval;
-        nDropDownWidth = 120;
+        nDropDownWidth = 200;
         nDropDownHeight = 20;
         nTextHeight = 20;
+        
+        prefix;
+        stAudioInput;
+        cAudioInput;
+        stAudioOutput;
+        cAudioOutput;
+        nAudioInput;
+        nAudioOutput;
+        
         
         mColors;
         sTitleFig_Main = 'IHAB_SystemCheck';
@@ -68,6 +77,13 @@ classdef IHAB_SystemCheck < handle
         function obj = IHAB_SystemCheck()
             
             addpath('functions');
+            addpath('msound');
+            
+            if ismac
+                obj.prefix = '/usr/local/bin/';
+            else
+                obj.prefix = '';
+            end
             
             set(0,'Units','Pixels') ;
             obj.vScreenSize = get(0, 'ScreenSize');
@@ -87,6 +103,8 @@ classdef IHAB_SystemCheck < handle
             obj.mColors = getColors();
             
             obj.buildGUI();
+            obj.checkDevice();
+            obj.checkAudioHardware();
             
         end
         
@@ -148,6 +166,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_CheckDevice.Text = 'Check';
+            obj.
             
             % Label: Start
             obj.hLabel_Start = uilabel(obj.hPanel_Controls);
@@ -321,13 +340,13 @@ classdef IHAB_SystemCheck < handle
             obj.hPanel_Hardware.Title = 'Hardware';
             
 %             % Label: Output
-%             obj.hLabel_Output = uilabel(obj.hPanel_Hardware);
-%             obj.hLabel_Output.Position = [ ...
-%                 obj.nInterval_Horizontal, ...
-%                 2 * obj.nDropDownInterval + obj.nDropDownHeight + obj.nTextHeight, ...
-%                 obj.nDropDownWidth, ...
-%                 obj.nDropDownHeight];
-%             obj.hLabel_Output.Text = 'Audio Output';
+            obj.hLabel_Output = uilabel(obj.hPanel_Hardware);
+            obj.hLabel_Output.Position = [ ...
+                obj.nInterval_Horizontal, ...
+                2 * obj.nDropDownInterval + 2 * obj.nDropDownHeight + obj.nTextHeight, ...
+                obj.nDropDownWidth, ...
+                obj.nDropDownHeight];
+            obj.hLabel_Output.Text = 'Audio Output';
             
             % DropDown: Output
             obj.hDropDown_Output = uidropdown(obj.hPanel_Hardware);
@@ -354,13 +373,61 @@ classdef IHAB_SystemCheck < handle
                 obj.nDropDownWidth, ...
                 obj.nDropDownHeight];
             
+        end
+        
+        function [bDevice] = checkDevice(obj)
             
+            % NEED TO ADJUST THIS
             
-            
-            
+            % make sure only one device is connected
+            sTestDevices = [obj.prefix,'adb devices'];
+            [~, sList] = system(sTestDevices);
+            if (length(splitlines(sList)) > 4)
+%                 errordlg('Too many devices connected.', 'Error');
+                bDevice = 0;
+                obj.hLamp_Device.Color = obj.mColors(2, :);
+            elseif (length(splitlines(sList)) < 4)
+%                 errordlg('No device connected.', 'Error');
+                bDevice = 0;
+                obj.hLamp_Device.Color = obj.mColors(2, :);
+            else
+                bDevice = 1;
+                obj.hLamp_Device.Color = obj.mColors(5, :);
+            end
             
         end
-
+            
+        function [] = checkAudioHardware(obj)
+            
+            % Get an overview o all connected audio hardware and fill in
+            % the dropdown menus
+            
+            stDevices = msound('deviceInfo');
+            obj.stAudioInput = [];
+            obj.stAudioOutput = [];
+            
+            for iDevice = 1 : length(stDevices)
+                if (stDevices(iDevice).inputs > 0 && stDevices(iDevice).outputs == 0)
+                    if (isempty(obj.stAudioInput))
+                        obj.stAudioInput = stDevices(iDevice);
+                        obj.cAudioInput = {stDevices(iDevice).name};
+                    else
+                        obj.stAudioInput(end+1) = stDevices(iDevice);
+                        obj.cAudioInput{end+1} = stDevices(iDevice).name;
+                    end
+                elseif (stDevices(iDevice).inputs == 0 && stDevices(iDevice).outputs > 0)
+                    if (isempty(obj.stAudioOutput))
+                        obj.stAudioOutput = stDevices(iDevice);
+                        obj.cAudioOutput = {stDevices(iDevice).name};
+                    else
+                        obj.stAudioOutput(end+1) = stDevices(iDevice);
+                        obj.cAudioOutput{end+1} = stDevices(iDevice).name;
+                    end
+                end
+            end
+            obj.hDropDown_Input.Items = obj.cAudioInput;
+            obj.hDropDown_Output.Items = obj.cAudioOutput;
+        end
     end
 
 end
