@@ -1,6 +1,6 @@
 
 classdef IHAB_SystemCheck < handle
-
+    
     properties
         
         vScreenSize;
@@ -10,7 +10,7 @@ classdef IHAB_SystemCheck < handle
         nUpperHeight = 280;
         nInterval_Vertical;
         nInterval_Horizontal = 30;
-        nButtonHeight = 30; 
+        nButtonHeight = 30;
         nButtonWidth = 76;
         nBottomSpace;
         nSpread_Lights_Horizontal;
@@ -53,7 +53,7 @@ classdef IHAB_SystemCheck < handle
         
         hAxes;
         hLabel_Message;
-        hHotspot; 
+        hHotspot;
         
         hLabel_Device;
         hLamp_Device;
@@ -78,10 +78,14 @@ classdef IHAB_SystemCheck < handle
         
         sFileName_Calib = 'calib.txt';
         
+        bDevice = false;
+        bCalib = false;
+        bMeasurement = false;
+        
         
     end
-
-
+    
+    
     methods
         
         function obj = IHAB_SystemCheck()
@@ -116,7 +120,6 @@ classdef IHAB_SystemCheck < handle
             
             obj.checkPrerequisites();
             obj.buildGUI();
-%             obj.checkDevice();
             obj.checkAudioHardware();
             
         end
@@ -154,8 +157,8 @@ classdef IHAB_SystemCheck < handle
             obj.hAxes.Position = [0,0,obj.hPanel_Graph.Position(3), obj.hPanel_Graph.Position(4)-20];
             obj.hAxes.Visible = 'Off';
             disableDefaultInteractivity(obj.hAxes);
-           
-            obj.hHotspot = patch(obj.hAxes, [0,0,1,1],[0,1,1,0], [1,1,1], 'FaceAlpha', 0.01, 'EdgeColor', 'none');
+            
+            obj.hHotspot = patch(obj.hAxes, [0,0,1,1],[0,1,1,0], [1,1,1], 'FaceAlpha', 0.91, 'EdgeColor', 'none');
             
             
             % Panel: Controls
@@ -169,25 +172,25 @@ classdef IHAB_SystemCheck < handle
                 obj.nGUIHeight];
             obj.hPanel_Controls.Title = 'Controls';
             
-            % Label: CheckDevice
-            obj.hLabel_CheckDevice = uilabel(obj.hPanel_Controls);
-            obj.hLabel_CheckDevice.Position = [ ...
-                obj.nInterval_Horizontal, ...
-                5.7 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
-                obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_CheckDevice.HorizontalAlignment = 'Center';
-            obj.hLabel_CheckDevice.Text = 'Check Device';
-            
-            % Button: CheckDevice
-            obj.hButton_CheckDevice = uibutton(obj.hPanel_Controls);
-            obj.hButton_CheckDevice.Position = [ ...
-                obj.nInterval_Horizontal, ...
-                5 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
-                obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hButton_CheckDevice.Text = 'Check';
-            obj.hButton_CheckDevice.ButtonPushedFcn = @obj.checkDevice;
+            %             % Label: CheckDevice
+            %             obj.hLabel_CheckDevice = uilabel(obj.hPanel_Controls);
+            %             obj.hLabel_CheckDevice.Position = [ ...
+            %                 obj.nInterval_Horizontal, ...
+            %                 5.7 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+            %                 obj.nButtonWidth, ...
+            %                 obj.nButtonHeight];
+            %             obj.hLabel_CheckDevice.HorizontalAlignment = 'Center';
+            %             obj.hLabel_CheckDevice.Text = 'Check Device';
+            %
+            %             % Button: CheckDevice
+            %             obj.hButton_CheckDevice = uibutton(obj.hPanel_Controls);
+            %             obj.hButton_CheckDevice.Position = [ ...
+            %                 obj.nInterval_Horizontal, ...
+            %                 5 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+            %                 obj.nButtonWidth, ...
+            %                 obj.nButtonHeight];
+            %             obj.hButton_CheckDevice.Text = 'Check';
+            %             obj.hButton_CheckDevice.ButtonPushedFcn = @obj.checkDevice;
             
             % Label: Start
             obj.hLabel_Start = uilabel(obj.hPanel_Controls);
@@ -206,8 +209,8 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_Start.Text = 'Start';
-            obj.hButton_Start.ButtonPushedFcn = @obj.callback_StartExperiment;
-          
+            obj.hButton_Start.ButtonPushedFcn = @obj.runExperiment;
+            
             % Label: Constant
             obj.hLabel_Constant = uilabel(obj.hPanel_Controls);
             obj.hLabel_Constant.Position = [ ...
@@ -246,7 +249,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonHeight];
             obj.hButton_SaveToPhone.Text = 'Save';
             
-           % Label: SaveInfo
+            % Label: SaveInfo
             obj.hLabel_SaveInfo = uilabel(obj.hPanel_Controls);
             obj.hLabel_SaveInfo.Position = [ ...
                 obj.nInterval_Horizontal + 3, ...
@@ -303,7 +306,7 @@ classdef IHAB_SystemCheck < handle
                 80, ...
                 obj.nLampHeight];
             obj.hLabel_Calibration.Text = 'Calibration';
-           
+            
             % Lamp: Calibration
             obj.hLamp_Calibration = uilamp(obj.hPanel_Lamps);
             obj.hLamp_Calibration.Position = [ ...
@@ -312,7 +315,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nLampHeight, ...
                 obj.nLampHeight];
             obj.hLamp_Calibration.Color = obj.mColors(2, :);
-          
+            
             % Label: Test
             obj.hLabel_Test = uilabel(obj.hPanel_Lamps);
             obj.hLabel_Test.Position  = [ ...
@@ -321,7 +324,7 @@ classdef IHAB_SystemCheck < handle
                 80, ...
                 obj.nLampHeight];
             obj.hLabel_Test.Text = 'Test';
-           
+            
             % Lamp: Test
             obj.hLamp_Test = uilamp(obj.hPanel_Lamps);
             obj.hLamp_Test.Position = [ ...
@@ -339,7 +342,7 @@ classdef IHAB_SystemCheck < handle
                 80, ...
                 obj.nLampHeight];
             obj.hLabel_Finished.Text = 'Finished';
-           
+            
             % Lamp: Finished
             obj.hLamp_Finished = uilamp(obj.hPanel_Lamps);
             obj.hLamp_Finished.Position = [ ...
@@ -348,10 +351,10 @@ classdef IHAB_SystemCheck < handle
                 obj.nLampHeight, ...
                 obj.nLampHeight];
             obj.hLamp_Finished.Color = obj.mColors(2, :);
-           
+            
             
             % Panel: Hardware
-        
+            
             
             obj.hPanel_Hardware = uipanel(obj.hFig_Main);
             obj.hPanel_Hardware.Position = [ ...
@@ -361,7 +364,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nGUIHeight - obj.nUpperHeight];
             obj.hPanel_Hardware.Title = 'Hardware';
             
-%             % Label: Output
+            %             % Label: Output
             obj.hLabel_Output = uilabel(obj.hPanel_Hardware);
             obj.hLabel_Output.Position = [ ...
                 obj.nInterval_Horizontal, ...
@@ -399,26 +402,24 @@ classdef IHAB_SystemCheck < handle
             
         end
         
-        function [bCheck] = checkPrerequisites(obj)
-
-            bCheck = true;
-
+        function [] = checkPrerequisites(obj)
+            
             warning('backtrace', 'off');
-
+            
             [~, tmp] = system('adb devices');
             if ~contains(tmp, 'List')
                 warning('ADB is not properly installed on your system.');
             end
-
+            
             if verLessThan('matlab', '9.5')
                 warning('Matlab version upgrade is recommended.');
             end
-
+            
             warning('backtrace', 'on');
-
+            
         end
-
-        function [bDevice] = checkDevice(obj, ~, ~)
+        
+        function [] = checkDevice(obj, ~, ~)
             
             % NEED TO ADJUST THIS
             
@@ -427,21 +428,21 @@ classdef IHAB_SystemCheck < handle
             [~, sList] = system(sTestDevices);
             if (length(splitlines(sList)) > 4)
                 errordlg('Too many devices connected.', 'Error');
-                bDevice = 0;
+                obj.bDevice = 0;
                 obj.hLamp_Device.Color = obj.mColors(2, :);
             elseif (length(splitlines(sList)) < 4)
                 errordlg('No device connected.', 'Error');
-                bDevice = 0;
+                obj.bDevice = 0;
                 obj.hLamp_Device.Color = obj.mColors(2, :);
             else
-                bDevice = 1;
+                obj.bDevice = 1;
                 obj.hLamp_Device.Color = obj.mColors(5, :);
             end
             
-            bDevice = 1;
+            obj.runExperiment();
             
         end
-            
+        
         function [] = checkAudioHardware(obj)
             
             % Get an overview o all connected audio hardware and fill in
@@ -494,19 +495,81 @@ classdef IHAB_SystemCheck < handle
             end
         end
         
-        function [] = callback_StartExperiment(obj, ~, ~)
+        function [] = runExperiment(obj, ~, ~)
             
-            if (obj.checkDevice())
-                obj.recordCalibration();
-                obj.performTFMeasurement();
+            if ~obj.bDevice
+                
+                fprintf('No Device.\n');
+                obj.showImage('connectDevice');
+                
+            else
+                
+                if ~obj.bCalib
+                    
+                    fprintf('No SetUp Calib.\n');
+                    obj.showImage('setUpCalibrator');
+                    
+                else
+                    
+                    if ~obj.bMeasurement
+                        
+                        fprintf('No Measurement.\n');
+                        obj.showImage('setUpMeasurement');
+                        
+                    end
+                    
+                end
+                
             end
             
         end
         
-        function [] = recordCalibration(obj)
+        function [] = showImage(obj, sImage)
+            
+            switch sImage
+                case 'connectDevice'
+                    mImage = imread(['images', filesep, 'img_connectDevice.jpg']);
+                case 'setUpCalibrator'
+                    mImage = imread(['images', filesep, 'img_setUpCalibrator.jpg']);
+                case 'setUpMeasurement'
+                    mImage = imread(['images', filesep, 'img_setUpMeasurement.jpg']);
+            end
+            
+            obj.hAxes.Visible = 'On';
+            obj.hAxes.NextPlot = 'replace';
+            
+            image(obj.hAxes, mImage);
+            obj.hAxes.XLim = [1, 464];
+            obj.hAxes.YLim = [1, 280];
+            obj.hAxes.XTickLabel = {};
+            obj.hAxes.XTick = [];
+            obj.hAxes.YTickLabel = {};
+            obj.hAxes.YTick = [];
+            
+            obj.hAxes.Box = 'On';
+            obj.hAxes.Layer = 'Top';
+            
+            obj.hHotspot = patch(obj.hAxes, [0,0,464,464],[0,280,280,0], [1,1,1], 'FaceAlpha', 0.91, 'EdgeColor', 'none');
+            
+            switch sImage
+                case 'connectDevice'
+                    obj.hHotspot.ButtonDownFcn = @obj.checkDevice;
+                case 'setUpCalibrator'
+                    obj.hHotspot.ButtonDownFcn = @obj.recordCalibration;
+                case 'setUpMeasurement'
+                    obj.hHotspot.ButtonDownFcn = @obj.performTFMeasurement;
+            end
+            
+            drawnow;
+            
+        end
+        
+        
+        
+        function [] = recordCalibration(obj, ~, ~)
             
             msound('close');
-           
+            
             numChannels = 1;
             
             % Open Input Device
@@ -522,7 +585,7 @@ classdef IHAB_SystemCheck < handle
             
             % Pre-recording to supress silence at start
             for iBlock = 1:10
-               msound('getSamples'); 
+                msound('getSamples');
             end
             
             % Recording the calibration signal
@@ -567,7 +630,7 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = performTFMeasurement(obj)
-           
+            
             msound('close');
             
             numChannels = 1;
@@ -603,22 +666,22 @@ classdef IHAB_SystemCheck < handle
             fclose(hFid);
         end
         
-        end
-
+    end
     
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 end
