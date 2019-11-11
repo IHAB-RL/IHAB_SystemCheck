@@ -102,8 +102,9 @@ classdef IHAB_SystemCheck < handle
             
             obj.mColors = getColors();
             
+            obj.checkPrerequisites();
             obj.buildGUI();
-            obj.checkDevice();
+%             obj.checkDevice();
             obj.checkAudioHardware();
             
         end
@@ -374,6 +375,27 @@ classdef IHAB_SystemCheck < handle
                 obj.nDropDownHeight];
             
         end
+        
+        function [bCheck] = checkPrerequisites(obj)
+
+            bCheck = true;
+
+            warning('backtrace', 'off');
+
+            [~, tmp] = system('adb devices');
+            if ~contains(tmp, 'List')
+                warning('ADB is not properly installed on your system.');
+            end
+
+            if verLessThan('matlab', '9.5')
+                warning('Matlab version upgrade is recommended.');
+            end
+
+            warning('backtrace', 'on');
+
+        end
+
+% EOF
         
         function [bDevice] = checkDevice(obj, ~, ~)
             
