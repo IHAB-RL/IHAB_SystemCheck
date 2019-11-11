@@ -53,6 +53,7 @@ classdef IHAB_SystemCheck < handle
         
         hAxes;
         hLabel_Message;
+        hHotspot; 
         
         hLabel_Device;
         hLamp_Device;
@@ -72,6 +73,10 @@ classdef IHAB_SystemCheck < handle
         nBlockSize = 1024;
         nDurationCalibration_s = 1;
         nCalibrationLevel;
+        nDurationMeasurement_s = 2;
+        vTransferFunction;
+        
+        sFileName_Calib = 'calib.txt';
         
         
     end
@@ -148,7 +153,10 @@ classdef IHAB_SystemCheck < handle
             obj.hAxes.Units = 'Pixels';
             obj.hAxes.Position = [0,0,obj.hPanel_Graph.Position(3), obj.hPanel_Graph.Position(4)-20];
             obj.hAxes.Visible = 'Off';
-      
+            disableDefaultInteractivity(obj.hAxes);
+           
+            obj.hHotspot = patch(obj.hAxes, [0,0,1,1],[0,1,1,0], [1,1,1], 'FaceAlpha', 0.01, 'EdgeColor', 'none');
+            
             
             % Panel: Controls
             
@@ -490,6 +498,7 @@ classdef IHAB_SystemCheck < handle
             
             if (obj.checkDevice())
                 obj.recordCalibration();
+                obj.performTFMeasurement();
             end
             
         end
@@ -536,15 +545,62 @@ classdef IHAB_SystemCheck < handle
             % Update Calibration Level
             obj.hEdit_Constant.Value = num2str(obj.nCalibrationLevel);
             
+            % Write calibration to text file
+            obj.writeCalibrationToFile(obj.nCalibrationLevel);
+            
             % Display Graph
             obj.hAxes.Visible = 'On';
             obj.hAxes.NextPlot = 'replace';
-            hPlot = plot(obj.hAxes, vCalibration);
+            
+            plot(obj.hAxes, vCalibration);
+            
             obj.hAxes.XLim = [0, nSamples];
+            obj.hAxes.XTickLabel = {};
+            obj.hAxes.XTick = [];
+            obj.hAxes.YTickLabel = {};
+            obj.hAxes.YTick = [];
+            
             obj.hAxes.Box = 'On';
             obj.hAxes.Layer = 'Top';
             
             msound('close');
+        end
+        
+        function [] = performTFMeasurement(obj)
+           
+            msound('close');
+            
+            numChannels = 1;
+            
+            msound('openWrite', ...
+                obj.nAudioOutput, ...
+                obj.nSamplerate, ...
+                obj.nBlockSize, ...
+                numChannels);
+            
+            nSamples = obj.nDurationMeasurement_s * obj.nSamplerate;
+            nBlocks = floor(nSamples/obj.nBlockSize);
+            
+            vNoise = 2 * randn(nSamples, 1) - 1;
+            
+            % Playback of Noise signal
+            for iBlock = 1 : nBlocks
+                
+                iIn = (iBlock-1)*obj.nBlockSize + 1;
+                iOut = iIn + obj.nBlockSize - 1;
+                
+                msound('putSamples', vNoise(iIn:iOut));
+                
+            end
+            
+            msound('close');
+            
+        end
+        
+        function [] = writeCalibrationToFile(obj, nLevel)
+            hFid = fopen([pwd, filesep, 'calibration', filesep, obj.sFileName_Calib], 'w');
+            fprintf(hFid, '%f', nLevel);
+            fclose(hFid);
         end
         
         end
