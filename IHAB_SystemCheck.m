@@ -31,7 +31,6 @@ classdef IHAB_SystemCheck < handle
         nAudioInput;
         nAudioOutput;
         
-        
         mColors;
         sTitleFig_Main = 'IHAB_SystemCheck';
         
@@ -52,6 +51,9 @@ classdef IHAB_SystemCheck < handle
         hLabel_SaveInfo;
         hButton_SaveInfo;
         
+        hAxes;
+        hLabel_Message;
+        
         hLabel_Device;
         hLamp_Device;
         hLabel_Calibration;
@@ -66,7 +68,10 @@ classdef IHAB_SystemCheck < handle
         hLabel_Output;
         hDropDown_Output;
         
-
+        nSamplerate = 48000;
+        nBlockSize = 1024;
+        nDurationCalibration_s = 1;
+        nCalibrationLevel;
         
         
     end
@@ -78,6 +83,8 @@ classdef IHAB_SystemCheck < handle
             
             addpath('functions');
             addpath('msound');
+            
+            msound('close');
             
             if ismac
                 obj.prefix = '/usr/local/bin/';
@@ -137,6 +144,11 @@ classdef IHAB_SystemCheck < handle
                 obj.nUpperHeight + 1];
             obj.hPanel_Graph.Title = 'Graph';
             
+            obj.hAxes = uiaxes(obj.hPanel_Graph);
+            obj.hAxes.Units = 'Pixels';
+            obj.hAxes.Position = [0,0,obj.hPanel_Graph.Position(3), obj.hPanel_Graph.Position(4)-20];
+            obj.hAxes.Visible = 'Off';
+      
             
             % Panel: Controls
             
@@ -186,6 +198,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_Start.Text = 'Start';
+            obj.hButton_Start.ButtonPushedFcn = @obj.callback_StartExperiment;
           
             % Label: Constant
             obj.hLabel_Constant = uilabel(obj.hPanel_Controls);
@@ -417,6 +430,8 @@ classdef IHAB_SystemCheck < handle
                 obj.hLamp_Device.Color = obj.mColors(5, :);
             end
             
+            bDevice = 1;
+            
         end
             
         function [] = checkAudioHardware(obj)
@@ -469,6 +484,67 @@ classdef IHAB_SystemCheck < handle
                     break;
                 end
             end
+        end
+        
+        function [] = callback_StartExperiment(obj, ~, ~)
+            
+            if (obj.checkDevice())
+                obj.recordCalibration();
+            end
+            
+        end
+        
+        function [] = recordCalibration(obj)
+            
+            msound('close');
+           
+            numChannels = 1;
+            
+            % Open Input Device
+            msound('openRead', ...
+                obj.nAudioInput, ...
+                obj.nSamplerate, ...
+                obj.nBlockSize, ...
+                numChannels);
+            
+            nSamples = obj.nDurationCalibration_s * obj.nSamplerate;
+            nBlocks = ceil(nSamples/obj.nBlockSize);
+            vCalibration = zeros(nSamples, numChannels);
+            
+            % Pre-recording to supress silence at start
+            for iBlock = 1:10
+               msound('getSamples'); 
+            end
+            
+            % Recording the calibration signal
+            for iBlock = 1 : nBlocks
+                
+                iIn = (iBlock-1)*obj.nBlockSize + 1;
+                iOut = iIn + obj.nBlockSize - 1;
+                
+                vCalibration(iIn:iOut) = msound('getSamples');
+                
+            end
+            
+            % HighPass
+            [b, a] = butter(2, 100*2*pi/obj.nSamplerate, 'high');
+            vCalibration = filter(b, a, vCalibration);
+            
+            nRMS = rms(vCalibration);
+            obj.nCalibrationLevel = 20*log10(nRMS);
+            
+            % Update Calibration Level
+            obj.hEdit_Constant.Value = num2str(obj.nCalibrationLevel);
+            
+            % Display Graph
+            obj.hAxes.Visible = 'On';
+            obj.hAxes.NextPlot = 'replace';
+            hPlot = plot(obj.hAxes, vCalibration);
+            obj.hAxes.XLim = [0, nSamples];
+            obj.hAxes.Box = 'On';
+            obj.hAxes.Layer = 'Top';
+            
+            msound('close');
         end
         
         end
