@@ -43,6 +43,8 @@ classdef IHAB_SystemCheck < handle
         
         hLabel_CheckDevice;
         hButton_CheckDevice;
+        hLabel_Calibrate;
+        hButton_Calibrate;
         hLabel_Start;
         hButton_Start;
         hLabel_Constant;
@@ -60,10 +62,10 @@ classdef IHAB_SystemCheck < handle
         hLamp_Device;
         hLabel_Calibration;
         hLamp_Calibration;
-        hLabel_Test;
-        hLamp_Test;
-        hLabel_Finished;
-        hLamp_Finished;
+        hLabel_Measurement;
+        hLamp_Measurement;
+        hLabel_Saved;
+        hLamp_Saved;
         
         hLabel_Input;
         hDropDown_Input;
@@ -71,9 +73,12 @@ classdef IHAB_SystemCheck < handle
         hDropDown_Output;
         
         nSamplerate = 48000;
-        nBlockSize = 1024;
+        nBlockSize = 1024*2;
         nDurationCalibration_s = 1;
-        nCalibConstant_Mic_dBFS;
+        nCalibConstant_Mic_FS_SPL;
+        nSystemCalibConstant;
+        nLevel_Calib_dBSPL;
+        nLevel_Calib_dBFS;
         nCalibConstant_System;
         nDurationMeasurement_s = 2;
         vTransferFunction;
@@ -110,7 +115,7 @@ classdef IHAB_SystemCheck < handle
             obj.nLeftWidth = obj.nGUIWidth - obj.nButtonWidth - ...
                 2 * obj.nInterval_Horizontal;
             obj.nInterval_Vertical = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
-                5 * obj.nButtonHeight)/6;
+                6 * obj.nButtonHeight)/7;
             obj.nLampInterval_Vertical = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
                 obj.nUpperHeight - 4*obj.nLampHeight)/5;
             obj.nDropDownInterval = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
@@ -181,7 +186,7 @@ classdef IHAB_SystemCheck < handle
             obj.hLabel_CheckDevice = uilabel(obj.hPanel_Controls);
             obj.hLabel_CheckDevice.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                5.7 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+                6.8 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_CheckDevice.HorizontalAlignment = 'Center';
@@ -191,20 +196,41 @@ classdef IHAB_SystemCheck < handle
             obj.hButton_CheckDevice = uibutton(obj.hPanel_Controls);
             obj.hButton_CheckDevice.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                5 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+                6 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_CheckDevice.Text = 'Check';
             obj.hButton_CheckDevice.ButtonPushedFcn = @obj.checkDevice;
             
+            % Label: Calibrate
+            obj.hLabel_Calibrate = uilabel(obj.hPanel_Controls);
+            obj.hLabel_Calibrate.Position = [ ...
+                obj.nInterval_Horizontal, ...
+                5.8 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+                obj.nButtonWidth, ...
+                obj.nButtonHeight];
+            obj.hLabel_Calibrate.HorizontalAlignment = 'Center';
+            obj.hLabel_Calibrate.Text = 'Calibrate Mic';
+
+            % Button: Calibrate
+            obj.hButton_Calibrate = uibutton(obj.hPanel_Controls);
+            obj.hButton_Calibrate.Position = [ ...
+                obj.nInterval_Horizontal, ...
+                5 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+                obj.nButtonWidth, ...
+                obj.nButtonHeight];
+            obj.hButton_Calibrate.Text = 'Calibrate';
+            obj.hButton_Calibrate.ButtonPushedFcn = @obj.callbackPerformCalibration;
+            
+            
             % Label: Start
             obj.hLabel_Start = uilabel(obj.hPanel_Controls);
             obj.hLabel_Start.Position = [ ...
-                obj.nInterval_Horizontal-7, ...
-                4.7 * obj.nInterval_Vertical + 3 * obj.nButtonHeight, ...
+                obj.nInterval_Horizontal + 1, ...
+                4.8 * obj.nInterval_Vertical + 3 * obj.nButtonHeight, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
-            obj.hLabel_Start.Text = 'Start Experiment';
+            obj.hLabel_Start.Text = 'Measurement';
             
             % Button: Start
             obj.hButton_Start = uibutton(obj.hPanel_Controls);
@@ -214,13 +240,13 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_Start.Text = 'Start';
-            obj.hButton_Start.ButtonPushedFcn = @obj.runExperiment;
+            obj.hButton_Start.ButtonPushedFcn = @obj.callbackPerformTFMeasurement;
             
             % Label: Constant
             obj.hLabel_Constant = uilabel(obj.hPanel_Controls);
             obj.hLabel_Constant.Position = [ ...
                 obj.nInterval_Horizontal + 7, ...
-                3.7 * obj.nInterval_Vertical + 2 * obj.nButtonHeight, ...
+                3.8 * obj.nInterval_Vertical + 2 * obj.nButtonHeight, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_Constant.Text = 'Calibration';
@@ -240,7 +266,7 @@ classdef IHAB_SystemCheck < handle
             obj.hLabel_SaveToPhone = uilabel(obj.hPanel_Controls);
             obj.hLabel_SaveToPhone.Position = [ ...
                 obj.nInterval_Horizontal - 1, ...
-                2.7 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
+                2.8 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_SaveToPhone.Text = 'Save to Phone';
@@ -253,12 +279,13 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_SaveToPhone.Text = 'Save';
+            obj.hButton_SaveToPhone.ButtonPushedFcn = @obj.callbackSaveToPhone;
             
             % Label: SaveInfo
             obj.hLabel_SaveInfo = uilabel(obj.hPanel_Controls);
             obj.hLabel_SaveInfo.Position = [ ...
                 obj.nInterval_Horizontal + 3, ...
-                1.7 * obj.nInterval_Vertical, ...
+                1.8 * obj.nInterval_Vertical, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_SaveInfo.Text = 'Save to Disk';
@@ -271,6 +298,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_SaveInfo.Text = 'Save';
+            obj.hButton_SaveInfo.ButtonPushedFcn = @obj.callbackSaveToDisk;
             
             
             
@@ -321,41 +349,41 @@ classdef IHAB_SystemCheck < handle
                 obj.nLampHeight];
             obj.hLamp_Calibration.Color = obj.mColors(2, :);
             
-            % Label: Test
-            obj.hLabel_Test = uilabel(obj.hPanel_Lamps);
-            obj.hLabel_Test.Position  = [ ...
+            % Label: Measurement
+            obj.hLabel_Measurement = uilabel(obj.hPanel_Lamps);
+            obj.hLabel_Measurement.Position  = [ ...
                 obj.nInterval_Horizontal + obj.nLampHeight + 5, ...
                 2 * obj.nLampInterval_Vertical + obj.nLampHeight, ...
                 80, ...
                 obj.nLampHeight];
-            obj.hLabel_Test.Text = 'Test';
+            obj.hLabel_Measurement.Text = 'Measurement';
             
-            % Lamp: Test
-            obj.hLamp_Test = uilamp(obj.hPanel_Lamps);
-            obj.hLamp_Test.Position = [ ...
+            % Lamp: Measurement
+            obj.hLamp_Measurement = uilamp(obj.hPanel_Lamps);
+            obj.hLamp_Measurement.Position = [ ...
                 obj.nInterval_Horizontal, ...
                 2 * obj.nLampInterval_Vertical + obj.nLampHeight, ...
                 obj.nLampHeight, ...
                 obj.nLampHeight];
-            obj.hLamp_Test.Color = obj.mColors(2, :);
+            obj.hLamp_Measurement.Color = obj.mColors(2, :);
             
-            % Label: Finished
-            obj.hLabel_Finished = uilabel(obj.hPanel_Lamps);
-            obj.hLabel_Finished.Position = [ ...
+            % Label: Saved
+            obj.hLabel_Saved = uilabel(obj.hPanel_Lamps);
+            obj.hLabel_Saved.Position = [ ...
                 obj.nInterval_Horizontal + obj.nLampHeight + 5, ...
                 obj.nLampInterval_Vertical - 1, ...
                 80, ...
                 obj.nLampHeight];
-            obj.hLabel_Finished.Text = 'Finished';
+            obj.hLabel_Saved.Text = 'Saved';
             
-            % Lamp: Finished
-            obj.hLamp_Finished = uilamp(obj.hPanel_Lamps);
-            obj.hLamp_Finished.Position = [ ...
+            % Lamp: Saved
+            obj.hLamp_Saved = uilamp(obj.hPanel_Lamps);
+            obj.hLamp_Saved.Position = [ ...
                 obj.nInterval_Horizontal, ...
                 obj.nLampInterval_Vertical, ...
                 obj.nLampHeight, ...
                 obj.nLampHeight];
-            obj.hLamp_Finished.Color = obj.mColors(2, :);
+            obj.hLamp_Saved.Color = obj.mColors(2, :);
             
             
             % Panel: Hardware
@@ -426,42 +454,6 @@ classdef IHAB_SystemCheck < handle
             
             warning('backtrace', 'on');
             
-        end
-        
-        function [bMobileDevice] = checkDevice(obj, ~, ~)
-            
-            % NEED TO ADJUST THIS
-            
-            obj.bMobileDevice = false;
-            bMobileDevice = false;
-            % make sure only one device is connected
-            sTestDevices = [obj.prefix,'adb devices'];
-            [~, sList] = system(sTestDevices);
-            if (length(splitlines(sList)) > 4)
-                errordlg('Too many devices connected.', 'Error');
-                obj.bMobileDevice = 0;
-                obj.hLamp_Device.Color = obj.mColors(2, :);
-            elseif (length(splitlines(sList)) < 4)
-                errordlg('No device connected.', 'Error');
-                obj.bMobileDevice = 0;
-                obj.hLamp_Device.Color = obj.mColors(2, :);
-            elseif (contains(sList, 'List'))
-                obj.bMobileDevice = true;
-                obj.hLamp_Device.Color = obj.mColors(5, :);
-                obj.bMobileDevice = true;
-                bMobileDevice = true;
-            end
-            
-        end
-        
-        function [] = checkDeviceAndRunExperiment(obj, ~, ~)
-           obj.checkDevice();
-           obj.runExperiment();
-        end
-        
-        function [] = performCalibrationAndRunExperiment(obj, ~, ~)
-            obj.performCalibration();
-            obj.runExperiment();
         end
         
         function [] = checkAudioHardware(obj)
@@ -540,45 +532,55 @@ classdef IHAB_SystemCheck < handle
             end
         end
         
-        function [] = runExperiment(obj, ~, ~)
-            
-            obj.checkDevice();
-            
-            if ~obj.bAudioDevice
-                obj.checkAudioHardware();
-                return; 
-            end
-            
-            if ~obj.bMobileDevice
-                fprintf('no mobile device\n');
-                obj.showImage('connectDevice');
-                return;
-            end
-                
-            if ~obj.bCalib
-                fprintf('No SetUp Calib.\n');
-                obj.showImage('setUpCalibrator');
-                return;
-            end
-                    
-            if ~obj.bMeasurement
-            	fprintf('No Measurement.\n');
-                obj.showImage('setUpMeasurement');
-               return 
-            end
-                
-            obj.showImage('');
-            
-        end
+%         function [] = runExperiment(obj, ~, ~)
+%             
+%             obj.checkDevice();
+%             
+%             if ~obj.bAudioDevice
+%                 obj.checkAudioHardware();
+%                 return; 
+%             end
+%             
+%             if ~obj.bMobileDevice
+%                 fprintf('no mobile device\n');
+%                 obj.showImage('connectDevice');
+%                 return;
+%             end
+%                 
+%             if ~obj.bCalib
+%                 fprintf('No SetUp Calib.\n');
+%                 obj.showImage('setUpCalibrator');
+%                 return;
+%             end
+%                     
+%             if ~obj.bMeasurement
+%             	fprintf('No Measurement.\n');
+%                 obj.showImage('setUpMeasurement');
+%                return 
+%             end
+%                 
+%             obj.showImage('');
+%             
+%         end
         
         function [] = showImage(obj, sImage)
             
             switch sImage
                 case 'connectDevice'
+                    obj.hLamp_Measurement.Color = obj.mColors(3, :);
                     mImage = imread(['images', filesep, 'img_connectDevice.jpg']);
                 case 'setUpCalibrator'
+                    obj.hLamp_Calibration.Color = obj.mColors(3, :);
+                    % Reset color of saved lamp
+                    obj.hLamp_Saved.Color = obj.mColors(2, :);
+                    % Reset color of measurement lamp
+                    obj.hLamp_Measurement.Color = obj.mColors(2, :);
                     mImage = imread(['images', filesep, 'img_setUpCalibrator.jpg']);
                 case 'setUpMeasurement'
+                    obj.hEdit_Constant.Value = '';
+                    obj.hLamp_Measurement.Color = obj.mColors(3, :);
+                    % Reset color of saved lamp
+                    obj.hLamp_Saved.Color = obj.mColors(2, :);
                     mImage = imread(['images', filesep, 'img_setUpMeasurement.jpg']);
                 case ''
                     mImage = [];
@@ -602,9 +604,9 @@ classdef IHAB_SystemCheck < handle
             
             switch sImage
                 case 'connectDevice'
-                    obj.hHotspot.ButtonDownFcn = @obj.checkDeviceAndRunExperiment;
+                    obj.hHotspot.ButtonDownFcn = @obj.checkDevice;
                 case 'setUpCalibrator'
-                    obj.hHotspot.ButtonDownFcn = @obj.performCalibrationAndRunExperiment;
+                    obj.hHotspot.ButtonDownFcn = @obj.performCalibration;
                 case 'setUpMeasurement'
                     obj.hHotspot.ButtonDownFcn = @obj.performTFMeasurement;
                 case ''
@@ -614,10 +616,49 @@ classdef IHAB_SystemCheck < handle
             drawnow;
             
         end
+       
+        function [bMobileDevice] = checkDevice(obj, ~, ~)
+            
+            obj.bMobileDevice = false;
+            bMobileDevice = false;
+            % make sure only one device is connected
+            sTestDevices = [obj.prefix,'adb devices'];
+            [~, sList] = system(sTestDevices);
+            if (length(splitlines(sList)) > 4)
+                errordlg('Too many devices connected.', 'Error');
+                obj.bMobileDevice = 0;
+                obj.hLamp_Device.Color = obj.mColors(2, :);
+            elseif (length(splitlines(sList)) < 4)
+                errordlg('No device connected.', 'Error');
+                obj.bMobileDevice = 0;
+                obj.hLamp_Device.Color = obj.mColors(2, :);
+            elseif (contains(sList, 'List'))
+                obj.bMobileDevice = true;
+                obj.hLamp_Device.Color = obj.mColors(5, :);
+                obj.bMobileDevice = true;
+                bMobileDevice = true;
+            end
+            
+        end
+        
+        function [] = callbackPerformCalibration(obj, ~, ~)
+           
+            if ~obj.bCalib
+               obj.showImage('setUpCalibrator');
+            else
+               sResult = questdlg('Reference microphone already calibrated. Redo?', ...
+                   'Calibration', 'Yes','No', 'No'); 
+               if (strcmp(sResult, 'Yes'))
+                   obj.showImage('setUpCalibrator');
+               end
+            end
+        end
         
         function [] = performCalibration(obj, ~, ~)
             
             obj.bCalib = false;
+            obj.bMeasurement = false;
+          
             obj.showImage('');
             obj.hAxes.XLim = [0, obj.nBlockSize];
             obj.hAxes.YLim = [-1, 1];
@@ -658,15 +699,23 @@ classdef IHAB_SystemCheck < handle
             [b, a] = butter(2, 100*2*pi/obj.nSamplerate, 'high');
             vCalibration = filter(b, a, vCalibration);
             
-            nRMS = rms(vCalibration);
-            % Calibrator emits signal at 114dB SPL
-            obj.nCalibConstant_Mic_dBFS = 114 - 20*log10(nRMS);
+            % Calibrator emits signal 1kHz @ 114dB SPL
+            obj.nLevel_Calib_dBSPL = 114; 
+            obj.nLevel_Calib_dBFS = 20*log10(rms(vCalibration));
+            obj.nCalibConstant_Mic_FS_SPL = obj.nLevel_Calib_dBSPL - obj.nLevel_Calib_dBFS; 
+            
+            
+            
+            
+            
+            
+            
             
             % Update Calibration Level
-            obj.hEdit_Constant.Value = num2str(obj.nCalibConstant_Mic_dBFS);
+            %obj.hEdit_Constant.Value = num2str(obj.nCalibConstant_Mic_FS_SPL);
             
             % Write calibration to text file
-            %obj.writeCalibrationToFile(obj.nCalibConstant_Mic_dBFS);
+            %obj.writeCalibrationToFile(obj.nCalibConstant_Mic_FS_SPL);
             
             % Display Graph
 %             obj.hAxes.Visible = 'On';
@@ -687,30 +736,61 @@ classdef IHAB_SystemCheck < handle
             
             obj.hLamp_Calibration.Color = obj.mColors(5, :);
             obj.showImage('');
-            obj.bCalib = true;
+            
+            % Perform check whether calibration result was okay
+            if true
+                obj.bCalib = true;
+            end
+            
+        end
+        
+        function [] = callbackPerformTFMeasurement(obj, ~, ~)
+           
+            if ~obj.bMeasurement
+                obj.showImage('setUpMeasurement');
+            else
+               sResult = questdlg('Measurement already taken. Redo?', ...
+                   'Measurement', 'Yes','No', 'No'); 
+               if (strcmp(sResult, 'Yes'))
+                   obj.showImage('setUpMeasurement');
+               end
+            end
             
         end
         
         function [] = performTFMeasurement(obj, ~, ~)
             
+            obj.bMeasurement = false;
+            
             obj.showImage('');
             
             msound('close');
             
-            numChannels = 1;
+            nNumChannels_In = 1;
+            nNumChannels_Out = 1;
             
             obj.phoneStartRecording();
             
-            msound('openWrite', ...
-                obj.nAudioOutput, ...
+            msound('openRW', ...
+                [obj.nAudioInput, obj.nAudioOutput], ...
                 obj.nSamplerate, ...
                 obj.nBlockSize, ...
-                numChannels);
+                [nNumChannels_In, nNumChannels_Out]);
             
             nSamples = obj.nDurationMeasurement_s * obj.nSamplerate;
             nBlocks = floor(nSamples/obj.nBlockSize);
             
-            vNoise = 2 * randn(nSamples, 1) - 1;
+            vNoise = 2 * rand(nSamples, 1) - 1;
+            vRefMic = zeros(nSamples, 1);
+            
+            vOriginal_rec = zeros(obj.nBlockSize, 1);
+            vRefMic_rec = zeros(obj.nBlockSize, 1);
+            
+            vWindow = hann(obj.nBlockSize);
+            nOverlap = 0.5;
+            nAlpha = 0.9;
+            
+            obj.hAxes.Visible = 'On';
             
             % Playback of Noise signal
             for iBlock = 1 : nBlocks
@@ -720,21 +800,81 @@ classdef IHAB_SystemCheck < handle
                 
                 msound('putSamples', vNoise(iIn:iOut));
                 
+                vRefMic(iIn:iOut) = msound('getSamples');
+                
+                vOriginal_rec = nAlpha*vOriginal_rec + (1-nAlpha)*vNoise(iIn:iOut);
+                vRefMic_rec = nAlpha*vRefMic_rec + (1-nAlpha)*vRefMic(iIn:iOut);
+                
+                vSpec_Original = filter(fspecial('average', [10, 1]), 1,20*log10(abs(fft(vOriginal_rec))));
+                vSpec_RefMic = filter(fspecial('average', [10, 1]), 1,20*log10(abs(fft(vRefMic_rec))));
+                
+                if (iBlock == 1)
+                    obj.hAxes.NextPlot = 'replace';
+                    hPlot_Orig = semilogx(obj.hAxes, vSpec_Original(1:end/2+1), 'Color', obj.mColors(1, :));
+                    obj.hAxes.NextPlot = 'add';
+                    hPlot_Ref = semilogx(obj.hAxes, vSpec_RefMic(1:end/2+1), 'Color', obj.mColors(2, :));
+                    obj.hAxes.XLim = [1, obj.nBlockSize/2+1];
+                else
+                    nPlot_Orig.YData = vSpec_Original(1:end/2+1);
+                    hPlot_Ref.YData = vSpec_RefMic(1:end/2+1);
+                end
+                
+                obj.hAxes.Box = 'On';
+                obj.hAxes.Layer = 'Top';
+                obj.hAxes.YLim = [-100, 50];
+                obj.hAxes.XTick = [];
+                obj.hAxes.YTick = [];
+                
+                
+                drawnow;
+                
             end
             
             obj.phoneStopRecording();
             
             msound('close');
             
-            obj.phoneGetRecording();
+            vSystem = obj.phoneGetRecording();
             
+            nLevel_RefMic_dBFS = 20*log10(rms(vRefMic));
+%             nLevel_RefMic_dBSPL = nLevel_RefMic_dBFS + obj.nCalibConstant_Mic_FS_SPL; 
             
+            L_IHAB_dBFS = 20*log10(rms(vSystem));
+
+            % Kalibrierkonstante SYS
+            obj.nSystemCalibConstant = obj.nCalibConstant_Mic_FS_SPL - (L_IHAB_dBFS - nLevel_RefMic_dBFS);
             
+            vPSD_System_Left = fft(vSystem(:, 1), obj.nBlockSize);
+            vPSD_System_Right = fft(vSystem(:, 2), obj.nBlockSize);
+
+            vPSD_System_Left = 20*log10(abs(vPSD_System_Left));
+            vPSD_System_Right = 20*log10(abs(vPSD_System_Right));
+           
+            obj.hAxes.Visible = 'On';
+            obj.hAxes.NextPlot = 'add';
             
+            semilogx(obj.hAxes, filter(fspecial('average', [10, 1]), 1, vPSD_System_Left), 'Color', obj.mColors(3, :));
+            semilogx(obj.hAxes, filter(fspecial('average', [10, 1]), 1, vPSD_System_Right), 'Color', obj.mColors(4, :));
             
+            obj.hAxes.XLim = [0, obj.nBlockSize/2+1];
+            obj.hAxes.YLim = [-100, 50];
+            obj.hAxes.XTickLabel = {};
+            obj.hAxes.XTick = [];
+            obj.hAxes.YTickLabel = {};
+            obj.hAxes.YTick = [];
             
+            obj.hAxes.Box = 'On';
+            obj.hAxes.Layer = 'Top';
             
-            
+            % Check whether calibration result is valid
+            if diff(obj.nSystemCalibConstant) < 2
+                
+                obj.writeCalibrationToFile(mean(obj.nSystemCalibConstant));
+                
+                obj.hEdit_Constant.Value = num2str(mean(obj.nSystemCalibConstant));
+                obj.hLamp_Measurement.Color = obj.mColors(5, :);
+                obj.bMeasurement = true;
+            end
             
             
         end
@@ -758,9 +898,66 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [vRecording] = phoneGetRecording(obj)
-            vRecording = 2*rand(obj.nDurationMeasurement_s * obj.nSamplerate, 2);
+            vRecording = 2*rand(obj.nDurationMeasurement_s * obj.nSamplerate, 2) - 1;
         end
         
+        function [] = callbackSaveToDisk(obj, ~, ~)
+            if obj.bMeasurement
+               obj.saveToDisk(); 
+            else
+               errordlg('No measurement data available.') 
+            end
+        end
+        
+        function [] = saveToDisk(obj, ~, ~)
+            sFolder = uigetdir('Please select directory to store calibration data.');
+            
+            if ~isempty(sFolder)
+               copyfile([pwd, filesep, 'calibration', filesep, obj.sFileName_Calib], sFolder); 
+            end
+            
+        end
+        
+        function [] = callbackSaveToPhone(obj, ~, ~)
+            if obj.bMeasurement
+               obj.saveToPhone();
+            else
+               errordlg('No measurement data available.') 
+            end
+        end
+        
+        function [] = saveToPhone(obj, ~, ~)
+            
+            vStatus = [];
+            
+            % Erase folder
+            sCommand_erase_quest = [obj.prefix, 'adb shell rm -r /sdcard/ihab/calibration'];
+            [status, ~] = system(sCommand_erase_quest);
+            vStatus = [vStatus, status];
+            
+            % Make new folder
+            sCommand_erase_quest = [obj.prefix, 'adb shell mkdir /sdcard/IHAB/calibration'];
+            [status, ~] = system(sCommand_erase_quest);
+            vStatus = [vStatus, status];
+            
+            % Copy calibration data to phone
+            sCommand_log = [obj.prefix, 'adb push calibration/', obj.sFileName_Calib,' sdcard/ihab/calibration/'];
+            [status, ~] = system(sCommand_log);
+            vStatus = [vStatus, status];
+            
+            % Check-in new folder
+            sCommand_erase_quest = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///sdcard/IHAB/calibration'];
+            [status, ~] = system(sCommand_erase_quest);
+            vStatus = [vStatus, status];
+            
+            %TODO: Check whether file is there
+            if true
+                % Announce all is good
+                obj.hLamp_Saved.Color = obj.mColors(5, :);
+            end
+            
+        end
+          
     end
     
     
