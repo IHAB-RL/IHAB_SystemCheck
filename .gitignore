@@ -2,3 +2,4 @@ legacy/*
 *.asv
 calibration
 calibration/*
+*.wav
