@@ -82,6 +82,9 @@ classdef IHAB_SystemCheck < handle
         nCalibConstant_System;
         nDurationMeasurement_s = 2;
         vTransferFunction;
+        vOriginal_rec;
+        vRefMic_rec;
+        vRefMic;
         
         sFileName_Calib = 'calib.txt';
         
@@ -608,7 +611,7 @@ classdef IHAB_SystemCheck < handle
                 case 'setUpCalibrator'
                     obj.hHotspot.ButtonDownFcn = @obj.performCalibration;
                 case 'setUpMeasurement'
-                    obj.hHotspot.ButtonDownFcn = @obj.performTFMeasurement;
+                    obj.hHotspot.ButtonDownFcn = @obj.phoneStartRecording;
                 case ''
                     obj.hHotspot.ButtonDownFcn = @obj.doNothing;
             end
@@ -703,35 +706,7 @@ classdef IHAB_SystemCheck < handle
             obj.nLevel_Calib_dBSPL = 114; 
             obj.nLevel_Calib_dBFS = 20*log10(rms(vCalibration));
             obj.nCalibConstant_Mic_FS_SPL = obj.nLevel_Calib_dBSPL - obj.nLevel_Calib_dBFS; 
-            
-            
-            
-            
-            
-            
-            
-            
-            % Update Calibration Level
-            %obj.hEdit_Constant.Value = num2str(obj.nCalibConstant_Mic_FS_SPL);
-            
-            % Write calibration to text file
-            %obj.writeCalibrationToFile(obj.nCalibConstant_Mic_FS_SPL);
-            
-            % Display Graph
-%             obj.hAxes.Visible = 'On';
-%             obj.hAxes.NextPlot = 'replace';
-%             
-%             plot(obj.hAxes, vCalibration);
-%             
-%             obj.hAxes.XLim = [0, nSamples];
-%             obj.hAxes.XTickLabel = {};
-%             obj.hAxes.XTick = [];
-%             obj.hAxes.YTickLabel = {};
-%             obj.hAxes.YTick = [];
-%             
-%             obj.hAxes.Box = 'On';
-%             obj.hAxes.Layer = 'Top';
-
+   
             msound('close');
             
             obj.hLamp_Calibration.Color = obj.mColors(5, :);
@@ -752,6 +727,16 @@ classdef IHAB_SystemCheck < handle
                sResult = questdlg('Measurement already taken. Redo?', ...
                    'Measurement', 'Yes','No', 'No'); 
                if (strcmp(sResult, 'Yes'))
+                   
+                   sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Reset"';
+                    [~, ~] = system(sCommand);
+
+                    sData = '';
+                    while ~contains(sData, 'Waiting')
+                        [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck')
+                        pause(0.1);
+                    end
+
                    obj.showImage('setUpMeasurement');
                end
             end
@@ -759,7 +744,7 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = performTFMeasurement(obj, ~, ~)
-            
+          
             obj.bMeasurement = false;
             
             obj.showImage('');
@@ -768,9 +753,7 @@ classdef IHAB_SystemCheck < handle
             
             nNumChannels_In = 1;
             nNumChannels_Out = 1;
-            
-            obj.phoneStartRecording();
-            
+           
             msound('openRW', ...
                 [obj.nAudioInput, obj.nAudioOutput], ...
                 obj.nSamplerate, ...
@@ -781,10 +764,10 @@ classdef IHAB_SystemCheck < handle
             nBlocks = floor(nSamples/obj.nBlockSize);
             
             vNoise = 2 * rand(nSamples, 1) - 1;
-            vRefMic = zeros(nSamples, 1);
+            obj.vRefMic = zeros(nSamples, 1);
             
-            vOriginal_rec = zeros(obj.nBlockSize, 1);
-            vRefMic_rec = zeros(obj.nBlockSize, 1);
+            obj.vOriginal_rec = zeros(obj.nBlockSize, 1);
+            obj.vRefMic_rec = zeros(obj.nBlockSize, 1);
             
             vWindow = hann(obj.nBlockSize);
             nOverlap = 0.5;
@@ -800,13 +783,13 @@ classdef IHAB_SystemCheck < handle
                 
                 msound('putSamples', vNoise(iIn:iOut));
                 
-                vRefMic(iIn:iOut) = msound('getSamples');
+                obj.vRefMic(iIn:iOut) = msound('getSamples');
                 
-                vOriginal_rec = nAlpha*vOriginal_rec + (1-nAlpha)*vNoise(iIn:iOut);
-                vRefMic_rec = nAlpha*vRefMic_rec + (1-nAlpha)*vRefMic(iIn:iOut);
+                obj.vOriginal_rec = nAlpha*obj.vOriginal_rec + (1-nAlpha)*vNoise(iIn:iOut);
+                obj.vRefMic_rec = nAlpha*obj.vRefMic_rec + (1-nAlpha)*obj.vRefMic(iIn:iOut);
                 
-                vSpec_Original = filter(fspecial('average', [10, 1]), 1,20*log10(abs(fft(vOriginal_rec))));
-                vSpec_RefMic = filter(fspecial('average', [10, 1]), 1,20*log10(abs(fft(vRefMic_rec))));
+                vSpec_Original = filter(fspecial('average', [10, 1]), 1,20*log10(abs(fft(obj.vOriginal_rec))));
+                vSpec_RefMic = filter(fspecial('average', [10, 1]), 1,20*log10(abs(fft(obj.vRefMic_rec))));
                 
                 if (iBlock == 1)
                     obj.hAxes.NextPlot = 'replace';
@@ -830,13 +813,17 @@ classdef IHAB_SystemCheck < handle
                 
             end
             
-            obj.phoneStopRecording();
-            
             msound('close');
             
+            obj.phoneStopRecording();
+            
+        end
+        
+        function [] = finishTFMeasurement(obj) 
+           
             vSystem = obj.phoneGetRecording();
             
-            nLevel_RefMic_dBFS = 20*log10(rms(vRefMic));
+            nLevel_RefMic_dBFS = 20*log10(rms(obj.vRefMic));
 %             nLevel_RefMic_dBSPL = nLevel_RefMic_dBFS + obj.nCalibConstant_Mic_FS_SPL; 
             
             L_IHAB_dBFS = 20*log10(rms(vSystem));
@@ -876,8 +863,8 @@ classdef IHAB_SystemCheck < handle
                 obj.bMeasurement = true;
             end
             
-            
         end
+        
         
         function [] = writeCalibrationToFile(obj, nLevel)
             hFid = fopen([pwd, filesep, 'calibration', filesep, obj.sFileName_Calib], 'w');
@@ -889,11 +876,36 @@ classdef IHAB_SystemCheck < handle
             return;
         end
         
-        function [] = phoneStartRecording(obj)
+        function [] = phoneStartRecording(obj, ~, ~)
+            
+            sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Start"';
+            [~, ~] = system(sCommand);
+            
+            sData = '';
+            while ~contains(sData, 'Measuring')
+                [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
+                pause(0.1);
+            end
+           
+            obj.performTFMeasurement();
             
         end
         
         function [] = phoneStopRecording(obj)
+            
+            sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Stop"';
+            [~, ~] = system(sCommand);
+            
+            sData = '';
+            while ~contains(sData, 'Finished')
+                [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
+                pause(0.1); 
+            end
+            
+            sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Finished"';
+            [~, ~] = system(sCommand);
+            
+            obj.finishTFMeasurement();
             
         end
         
