@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import android.widget.Toast;
 
 public class IntentReceiver extends BroadcastReceiver {
 
@@ -18,19 +17,19 @@ public class IntentReceiver extends BroadcastReceiver {
 
             switch (data) {
                 case "Start":
-                    MainActivity.startRecording();
+                    context.sendBroadcast(new Intent("command").putExtra("do","Start"));
                     break;
 
                 case "Stop":
-                    MainActivity.stopRecording();
+                    context.sendBroadcast(new Intent("command").putExtra("do","Stop"));
                     break;
 
                 case "Finished":
-                    MainActivity.setIsFinished(true);
+                    context.sendBroadcast(new Intent("command").putExtra("do","Finished"));
                     break;
 
                 case "Reset":
-                    MainActivity.reset();
+                    context.sendBroadcast(new Intent("command").putExtra("do","Reset"));
                     break;
             }
         } catch (Exception e) {

@@ -4,7 +4,9 @@ import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Messenger;
@@ -45,19 +47,55 @@ public class MainActivity extends AppCompatActivity {
     private static Handler mTaskHandler = new Handler();
     private int checkInterval = 100;
 
+    BroadcastReceiver mCommandReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            try {
+                String data = intent.getStringExtra("do");
+
+                Log.e(LOG, "DATA: " + data);
+
+                switch (data) {
+                    case "Start":
+                        mInputProfile_RFCOMM = new InputProfile_RFCOMM(MainActivity.this, mActivityMessenger);
+                        mInputProfile_RFCOMM.registerClient();
+                        mInputProfile_RFCOMM.setInterface();
+                        break;
+                    case "Stop":
+                        //mInputProfile_RFCOMM.stopRecording();
+                        mInputProfile_RFCOMM.cleanUp();
+                        setIsRecording(false);
+                        break;
+                    case "Finished":
+                        setIsFinished(true);
+                        //mInputProfile_RFCOMM.cleanUp();
+                        //mInputProfile_RFCOMM = null;
+                        break;
+                    case "Reset":
+                        //setIsRecording(false);
+                        //setIsFinished(false);
+                        reset();
+                        //mInputProfile_RFCOMM = new InputProfile_RFCOMM(MainActivity.this, mActivityMessenger);
+                        break;
+
+                }
+
+            } catch (Exception e) {
+                Log.e(LOG, "Problem: " + e.toString());
+            }
+        }
+    };
+
     private Runnable mSetTextRunnable = new Runnable() {
         @Override
         public void run() {
             if (getIsRecording() && !getIsFinished()) {
-                //mInfoText.setText("Measuring");
                 mSymbol.setImageResource(R.drawable.mic);
                 setMessageDump("Measuring");
             } else if (!getIsRecording() && !getIsFinished()) {
-                //mInfoText.setText("Waiting");
                 mSymbol.setImageResource(R.drawable.hourglass);
                 setMessageDump("Waiting");
             } else {
-                //mInfoText.setText("Measurement\ncomplete.\n\nYou may close the application.");
                 mSymbol.setImageResource(R.drawable.check);
                 setMessageDump("Finished");
             }
@@ -70,6 +108,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        registerReceiver(mCommandReceiver, new IntentFilter("command"));
+
         mSymbol = findViewById(R.id.symbol);
 
         //requestPermissions(MY_PERMISSIONS_RECORD_AUDIO);
@@ -79,12 +119,6 @@ public class MainActivity extends AppCompatActivity {
 
         Log.e(LOG, "New path: " + path);
 
-
-        //mVibration = new Vibration(this);
-
-        mInputProfile_RFCOMM = new InputProfile_RFCOMM(this, mActivityMessenger);
-        mInputProfile_RFCOMM.registerClient();
-
         mTaskHandler.post(mSetTextRunnable);
 
     }
@@ -92,13 +126,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         mTaskHandler.removeCallbacks(mSetTextRunnable);
-        mInputProfile_RFCOMM.cleanUp();
+        mInputProfile_RFCOMM = null;
+        unregisterReceiver(mCommandReceiver);
         super.onDestroy();
     }
 
     @Override
     public void dump(String prefix, FileDescriptor fd, PrintWriter writer, String[] args) {
-        //super.dump(prefix, fd, writer, args);
         writer.println(getMessageDump());
     }
 
@@ -112,15 +146,16 @@ public class MainActivity extends AppCompatActivity {
 
     public static void setIsFinished(boolean finished) {
         isFinished = finished;
-        Log.e(LOG, "Recording: " + getIsRecording() + ", Finished: " + getIsFinished());
     }
 
     public static boolean getIsFinished() {
         return isFinished;
     }
 
-    public static void reset() {
-        setIsFinished(false);
+    public void reset() {
+        finishAffinity();
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
     }
 
     public static void setIsRecording(boolean recording) {
@@ -130,14 +165,6 @@ public class MainActivity extends AppCompatActivity {
     public static boolean getIsRecording() {
         return isRecording;
     }
-
-    public void setFinished() {
-        mInfoText.setText(R.string.info_Finished);
-    }
-
-    //public Vibration getVibration() {
-    //    return mVibration;
-    //}
 
     public void requestPermissions(int iPermission) {
 
@@ -204,14 +231,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
         }
-    }
-
-    public static void startRecording() {
-        mInputProfile_RFCOMM.setInterface();
-    }
-
-    public static void stopRecording() {
-        mInputProfile_RFCOMM.cleanUp();
     }
 
     class MessageHandler extends Handler {

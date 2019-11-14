@@ -43,6 +43,8 @@ classdef IHAB_SystemCheck < handle
         
         hLabel_CheckDevice;
         hButton_CheckDevice;
+        hLabel_CloseApp
+        hButton_CloseApp
         hLabel_Calibrate;
         hButton_Calibrate;
         hLabel_Start;
@@ -92,6 +94,7 @@ classdef IHAB_SystemCheck < handle
         bAudioDevice = false;
         bCalib = false;
         bMeasurement = false;
+        bEnableButtons = false;
         
         
     end
@@ -118,7 +121,7 @@ classdef IHAB_SystemCheck < handle
             obj.nLeftWidth = obj.nGUIWidth - obj.nButtonWidth - ...
                 2 * obj.nInterval_Horizontal;
             obj.nInterval_Vertical = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
-                6 * obj.nButtonHeight)/7;
+                7 * obj.nButtonHeight)/8;
             obj.nLampInterval_Vertical = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
                 obj.nUpperHeight - 4*obj.nLampHeight)/5;
             obj.nDropDownInterval = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
@@ -133,6 +136,8 @@ classdef IHAB_SystemCheck < handle
             obj.buildGUI();
             obj.checkDevice();
             obj.checkAudioHardware();
+            
+            obj.bEnableButtons = true;
             
         end
         
@@ -189,7 +194,7 @@ classdef IHAB_SystemCheck < handle
             obj.hLabel_CheckDevice = uilabel(obj.hPanel_Controls);
             obj.hLabel_CheckDevice.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                6.8 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
+                8 * obj.nInterval_Vertical + 6 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_CheckDevice.HorizontalAlignment = 'Center';
@@ -199,17 +204,37 @@ classdef IHAB_SystemCheck < handle
             obj.hButton_CheckDevice = uibutton(obj.hPanel_Controls);
             obj.hButton_CheckDevice.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                6 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
+                7 * obj.nInterval_Vertical + 6 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_CheckDevice.Text = 'Check';
             obj.hButton_CheckDevice.ButtonPushedFcn = @obj.checkDevice;
             
+            % Label: Close App
+            obj.hLabel_CloseApp = uilabel(obj.hPanel_Controls);
+            obj.hLabel_CloseApp.Position = [ ...
+                obj.nInterval_Horizontal, ...
+                7 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
+                obj.nButtonWidth, ...
+                obj.nButtonHeight];
+            obj.hLabel_CloseApp.HorizontalAlignment = 'Center';
+            obj.hLabel_CloseApp.Text = 'Close App';
+
+            % Button: Close App
+            obj.hButton_CloseApp = uibutton(obj.hPanel_Controls);
+            obj.hButton_CloseApp.Position = [ ...
+                obj.nInterval_Horizontal, ...
+                6 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
+                obj.nButtonWidth, ...
+                obj.nButtonHeight];
+            obj.hButton_CloseApp.Text = 'Close';
+            obj.hButton_CloseApp.ButtonPushedFcn = @obj.callbackCloseApp;
+            
             % Label: Calibrate
             obj.hLabel_Calibrate = uilabel(obj.hPanel_Controls);
             obj.hLabel_Calibrate.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                5.8 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+                6 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_Calibrate.HorizontalAlignment = 'Center';
@@ -230,7 +255,7 @@ classdef IHAB_SystemCheck < handle
             obj.hLabel_Start = uilabel(obj.hPanel_Controls);
             obj.hLabel_Start.Position = [ ...
                 obj.nInterval_Horizontal + 1, ...
-                4.8 * obj.nInterval_Vertical + 3 * obj.nButtonHeight, ...
+                5 * obj.nInterval_Vertical + 3 * obj.nButtonHeight, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_Start.Text = 'Measurement';
@@ -249,7 +274,7 @@ classdef IHAB_SystemCheck < handle
             obj.hLabel_Constant = uilabel(obj.hPanel_Controls);
             obj.hLabel_Constant.Position = [ ...
                 obj.nInterval_Horizontal + 7, ...
-                3.8 * obj.nInterval_Vertical + 2 * obj.nButtonHeight, ...
+                4 * obj.nInterval_Vertical + 2 * obj.nButtonHeight, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_Constant.Text = 'Calibration';
@@ -269,7 +294,7 @@ classdef IHAB_SystemCheck < handle
             obj.hLabel_SaveToPhone = uilabel(obj.hPanel_Controls);
             obj.hLabel_SaveToPhone.Position = [ ...
                 obj.nInterval_Horizontal - 1, ...
-                2.8 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
+                3 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_SaveToPhone.Text = 'Save to Phone';
@@ -288,7 +313,7 @@ classdef IHAB_SystemCheck < handle
             obj.hLabel_SaveInfo = uilabel(obj.hPanel_Controls);
             obj.hLabel_SaveInfo.Position = [ ...
                 obj.nInterval_Horizontal + 3, ...
-                1.8 * obj.nInterval_Vertical, ...
+                2 * obj.nInterval_Vertical, ...
                 2 * obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hLabel_SaveInfo.Text = 'Save to Disk';
@@ -535,37 +560,6 @@ classdef IHAB_SystemCheck < handle
             end
         end
         
-%         function [] = runExperiment(obj, ~, ~)
-%             
-%             obj.checkDevice();
-%             
-%             if ~obj.bAudioDevice
-%                 obj.checkAudioHardware();
-%                 return; 
-%             end
-%             
-%             if ~obj.bMobileDevice
-%                 fprintf('no mobile device\n');
-%                 obj.showImage('connectDevice');
-%                 return;
-%             end
-%                 
-%             if ~obj.bCalib
-%                 fprintf('No SetUp Calib.\n');
-%                 obj.showImage('setUpCalibrator');
-%                 return;
-%             end
-%                     
-%             if ~obj.bMeasurement
-%             	fprintf('No Measurement.\n');
-%                 obj.showImage('setUpMeasurement');
-%                return 
-%             end
-%                 
-%             obj.showImage('');
-%             
-%         end
-        
         function [] = showImage(obj, sImage)
             
             switch sImage
@@ -622,6 +616,8 @@ classdef IHAB_SystemCheck < handle
        
         function [bMobileDevice] = checkDevice(obj, ~, ~)
             
+            obj.bEnableButtons = false;
+            
             obj.bMobileDevice = false;
             bMobileDevice = false;
             % make sure only one device is connected
@@ -642,9 +638,29 @@ classdef IHAB_SystemCheck < handle
                 bMobileDevice = true;
             end
             
+            [~, temp] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
+            if contains(temp, 'Bad activity command')
+                system('adb shell am start -n com.example.IHABSystemCheck/.MainActivity');
+            else
+                [~, ~] = system('adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Reset"');
+
+            end
+            
+            sData = '';
+            while ~contains(sData, 'Waiting')
+                [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
+                pause(0.1);
+            end
+            
+            obj.bEnableButtons = true;
+            
         end
         
         function [] = callbackPerformCalibration(obj, ~, ~)
+            
+            if ~obj.bEnableButtons
+               return; 
+            end
            
             if ~obj.bCalib
                obj.showImage('setUpCalibrator');
@@ -658,6 +674,8 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = performCalibration(obj, ~, ~)
+            
+            obj.bEnableButtons = false;
             
             obj.bCalib = false;
             obj.bMeasurement = false;
@@ -717,10 +735,16 @@ classdef IHAB_SystemCheck < handle
                 obj.bCalib = true;
             end
             
+            obj.bEnableButtons = true;
+            
         end
         
         function [] = callbackPerformTFMeasurement(obj, ~, ~)
-           
+            
+            if ~obj.bEnableButtons
+               return; 
+            end
+          
             if ~obj.bMeasurement
                 obj.showImage('setUpMeasurement');
             else
@@ -744,6 +768,8 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = performTFMeasurement(obj, ~, ~)
+            
+            obj.bEnableButtons = false;
           
             obj.bMeasurement = false;
             
@@ -863,6 +889,8 @@ classdef IHAB_SystemCheck < handle
                 obj.bMeasurement = true;
             end
             
+            obj.bEnableButtons = true;
+            
         end
         
         
@@ -914,6 +942,11 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = callbackSaveToDisk(obj, ~, ~)
+            
+            if ~obj.bEnableButtons
+               return; 
+            end
+            
             if obj.bMeasurement
                obj.saveToDisk(); 
             else
@@ -931,6 +964,11 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = callbackSaveToPhone(obj, ~, ~)
+            
+            if ~obj.bEnableButtons
+               return; 
+            end
+            
             if obj.bMeasurement
                obj.saveToPhone();
             else
@@ -939,6 +977,8 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = saveToPhone(obj, ~, ~)
+            
+            obj.bEnableButtons = false;
             
             vStatus = [];
             
@@ -968,6 +1008,20 @@ classdef IHAB_SystemCheck < handle
                 obj.hLamp_Saved.Color = obj.mColors(5, :);
             end
             
+            obj.bEnableButtons = true;
+            
+        end
+        
+        function [] = callbackCloseApp(obj, ~, ~)
+            
+            if obj.bEnableButtons
+               obj.closeApp(); 
+            end
+            
+        end
+        
+        function [] = closeApp(obj)
+           system('adb shell am force-stop com.example.IHABSystemCheck'); 
         end
           
     end

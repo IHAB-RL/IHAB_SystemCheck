@@ -319,7 +319,6 @@ public class InputProfile_RFCOMM implements InputProfile {
                 mTaskHandler.postDelayed(mAudioReleaseRunnable, mReleaseInterval);
             }
         }
-        mContext.setFinished();
     }
 
 
