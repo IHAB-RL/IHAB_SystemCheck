@@ -72,8 +72,6 @@ public class MainActivity extends AppCompatActivity {
                         //mInputProfile_RFCOMM = null;
                         break;
                     case "Reset":
-                        //setIsRecording(false);
-                        //setIsFinished(false);
                         reset();
                         //mInputProfile_RFCOMM = new InputProfile_RFCOMM(MainActivity.this, mActivityMessenger);
                         break;
@@ -125,6 +123,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        setIsFinished(false);
+        setIsRecording(false);
         mTaskHandler.removeCallbacks(mSetTextRunnable);
         mInputProfile_RFCOMM = null;
         unregisterReceiver(mCommandReceiver);

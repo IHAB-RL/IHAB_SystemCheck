@@ -7,7 +7,7 @@ classdef IHAB_SystemCheck < handle
         nGUIWidth = 600;
         nGUIHeight = 400;
         nLeftWidth;
-        nUpperHeight = 280;
+        nUpperHeight;
         nInterval_Vertical;
         nInterval_Horizontal = 30;
         nButtonHeight = 30;
@@ -23,6 +23,10 @@ classdef IHAB_SystemCheck < handle
         nDropDownHeight = 20;
         nTextHeight = 20;
         
+        nPanelHeight_SaveResult;
+        nPanelHeight_Measurement;
+        nPanelHeight_MobileDevice;
+        
         prefix;
         stAudioInput;
         cAudioInput;
@@ -37,7 +41,9 @@ classdef IHAB_SystemCheck < handle
         
         hFig_Main;
         hPanel_Graph;
-        hPanel_Controls;
+        hPanel_MobileDevice;
+        hPanel_Measurement;
+        hPanel_SaveResult;
         hPanel_Lamps;
         hPanel_Hardware;
         
@@ -46,7 +52,7 @@ classdef IHAB_SystemCheck < handle
         hLabel_CloseApp
         hButton_CloseApp
         hLabel_Calibrate;
-        hButton_Calibrate;
+        hButton_Calibration;
         hLabel_Start;
         hButton_Start;
         hLabel_Constant;
@@ -120,8 +126,16 @@ classdef IHAB_SystemCheck < handle
             
             obj.nLeftWidth = obj.nGUIWidth - obj.nButtonWidth - ...
                 2 * obj.nInterval_Horizontal;
-            obj.nInterval_Vertical = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
-                7 * obj.nButtonHeight)/8;
+            
+            obj.nInterval_Vertical = ((obj.nGUIHeight - ...
+                3*obj.nPanelTitleHeight - 7*obj.nButtonHeight)/10);
+            
+            obj.nPanelHeight_MobileDevice = obj.nPanelTitleHeight + 2*obj.nButtonHeight + 3*obj.nInterval_Vertical;
+            obj.nPanelHeight_Measurement = obj.nPanelTitleHeight + 3*obj.nButtonHeight + 4*obj.nInterval_Vertical + 1;
+            obj.nPanelHeight_SaveResult = obj.nPanelTitleHeight + 2*obj.nButtonHeight + 3*obj.nInterval_Vertical;
+            
+            obj.nUpperHeight = obj.nGUIHeight - obj.nPanelHeight_SaveResult;
+            
             obj.nLampInterval_Vertical = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
                 obj.nUpperHeight - 4*obj.nLampHeight)/5;
             obj.nDropDownInterval = (obj.nGUIHeight - obj.nPanelTitleHeight - ...
@@ -174,160 +188,118 @@ classdef IHAB_SystemCheck < handle
             obj.hAxes.Position = [0,0,obj.hPanel_Graph.Position(3), obj.hPanel_Graph.Position(4)-20];
             obj.hAxes.Visible = 'Off';
             disableDefaultInteractivity(obj.hAxes);
+            obj.hAxes.Box = 'On';
+            obj.hAxes.Layer = 'Top';
             
             obj.hHotspot = patch(obj.hAxes, [0,0,1,1],[0,1,1,0], [1,1,1], 'FaceAlpha', 0.91, 'EdgeColor', 'none');
             obj.hHotspot.ButtonDownFcn = @obj.doNothing;
             
             
-            % Panel: Controls
+            % Panel: Mobile Device
             
             
-            obj.hPanel_Controls = uipanel(obj.hFig_Main);
-            obj.hPanel_Controls.Position = [ ...
+            obj.hPanel_MobileDevice = uipanel(obj.hFig_Main);
+            obj.hPanel_MobileDevice.Position = [ ...
                 obj.nLeftWidth, ...
-                1, ...
+                obj.nPanelHeight_SaveResult + obj.nPanelHeight_Measurement, ...
                 obj.nGUIWidth - obj.nLeftWidth + 1, ...
-                obj.nGUIHeight];
-            obj.hPanel_Controls.Title = 'Controls';
-            
-            % Label: CheckDevice
-            obj.hLabel_CheckDevice = uilabel(obj.hPanel_Controls);
-            obj.hLabel_CheckDevice.Position = [ ...
-                obj.nInterval_Horizontal, ...
-                8 * obj.nInterval_Vertical + 6 * obj.nButtonHeight, ...
-                obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_CheckDevice.HorizontalAlignment = 'Center';
-            obj.hLabel_CheckDevice.Text = 'Check Device';
-
+                obj.nPanelHeight_MobileDevice];
+            obj.hPanel_MobileDevice.Title = 'Mobile Device';
+           
             % Button: CheckDevice
-            obj.hButton_CheckDevice = uibutton(obj.hPanel_Controls);
+            obj.hButton_CheckDevice = uibutton(obj.hPanel_MobileDevice);
             obj.hButton_CheckDevice.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                7 * obj.nInterval_Vertical + 6 * obj.nButtonHeight, ...
+                2 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
-            obj.hButton_CheckDevice.Text = 'Check';
-            obj.hButton_CheckDevice.ButtonPushedFcn = @obj.checkDevice;
+            obj.hButton_CheckDevice.Text = 'Reset';
+            obj.hButton_CheckDevice.ButtonPushedFcn = @obj.callbackCheckDevice;
             
-            % Label: Close App
-            obj.hLabel_CloseApp = uilabel(obj.hPanel_Controls);
-            obj.hLabel_CloseApp.Position = [ ...
-                obj.nInterval_Horizontal, ...
-                7 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
-                obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_CloseApp.HorizontalAlignment = 'Center';
-            obj.hLabel_CloseApp.Text = 'Close App';
-
             % Button: Close App
-            obj.hButton_CloseApp = uibutton(obj.hPanel_Controls);
+            obj.hButton_CloseApp = uibutton(obj.hPanel_MobileDevice);
             obj.hButton_CloseApp.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                6 * obj.nInterval_Vertical + 5 * obj.nButtonHeight, ...
+                1 * obj.nInterval_Vertical + 0 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_CloseApp.Text = 'Close';
             obj.hButton_CloseApp.ButtonPushedFcn = @obj.callbackCloseApp;
             
-            % Label: Calibrate
-            obj.hLabel_Calibrate = uilabel(obj.hPanel_Controls);
-            obj.hLabel_Calibrate.Position = [ ...
-                obj.nInterval_Horizontal, ...
-                6 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
-                obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_Calibrate.HorizontalAlignment = 'Center';
-            obj.hLabel_Calibrate.Text = 'Calibrate Mic';
-
+            
+            % Panel: Measurement
+            
+            
+            obj.hPanel_Measurement = uipanel(obj.hFig_Main);
+            obj.hPanel_Measurement.Position = [ ...
+                obj.nLeftWidth, ...
+                obj.nPanelHeight_SaveResult, ...
+                obj.nGUIWidth - obj.nLeftWidth + 1, ...
+                obj.nPanelHeight_Measurement + 1];
+            obj.hPanel_Measurement.Title = 'Measurement';
+ 
             % Button: Calibrate
-            obj.hButton_Calibrate = uibutton(obj.hPanel_Controls);
-            obj.hButton_Calibrate.Position = [ ...
+            obj.hButton_Calibration = uibutton(obj.hPanel_Measurement);
+            obj.hButton_Calibration.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                5 * obj.nInterval_Vertical + 4 * obj.nButtonHeight, ...
+                3 * obj.nInterval_Vertical + 2 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
-            obj.hButton_Calibrate.Text = 'Calibrate';
-            obj.hButton_Calibrate.ButtonPushedFcn = @obj.callbackPerformCalibration;
-            
-            
-            % Label: Start
-            obj.hLabel_Start = uilabel(obj.hPanel_Controls);
-            obj.hLabel_Start.Position = [ ...
-                obj.nInterval_Horizontal + 1, ...
-                5 * obj.nInterval_Vertical + 3 * obj.nButtonHeight, ...
-                2 * obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_Start.Text = 'Measurement';
+            obj.hButton_Calibration.Text = 'Calibration';
+            obj.hButton_Calibration.ButtonPushedFcn = @obj.callbackPerformCalibration;
             
             % Button: Start
-            obj.hButton_Start = uibutton(obj.hPanel_Controls);
+            obj.hButton_Start = uibutton(obj.hPanel_Measurement);
             obj.hButton_Start.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                4 * obj.nInterval_Vertical + 3 * obj.nButtonHeight, ...
+                2 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_Start.Text = 'Start';
             obj.hButton_Start.ButtonPushedFcn = @obj.callbackPerformTFMeasurement;
             
-            % Label: Constant
-            obj.hLabel_Constant = uilabel(obj.hPanel_Controls);
-            obj.hLabel_Constant.Position = [ ...
-                obj.nInterval_Horizontal + 7, ...
-                4 * obj.nInterval_Vertical + 2 * obj.nButtonHeight, ...
-                2 * obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_Constant.Text = 'Calibration';
-            
             % Edit: Constant
-            obj.hEdit_Constant = uieditfield(obj.hPanel_Controls);
+            obj.hEdit_Constant = uieditfield(obj.hPanel_Measurement);
             obj.hEdit_Constant.Position = [ ...
                 obj.nInterval_Horizontal, ...
-                3 * obj.nInterval_Vertical + 2 * obj.nButtonHeight, ...
+                1 * obj.nInterval_Vertical + 0 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hEdit_Constant.Editable = 'off';
             obj.hEdit_Constant.HorizontalAlignment = 'Center';
             obj.hEdit_Constant.Value = '-';
             
-            % Label: SaveToPhone
-            obj.hLabel_SaveToPhone = uilabel(obj.hPanel_Controls);
-            obj.hLabel_SaveToPhone.Position = [ ...
-                obj.nInterval_Horizontal - 1, ...
-                3 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
-                2 * obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_SaveToPhone.Text = 'Save to Phone';
+            
+            % Panel: Save Result
+            
+            
+            obj.hPanel_SaveResult = uipanel(obj.hFig_Main);
+            obj.hPanel_SaveResult.Position = [ ...
+                obj.nLeftWidth, ...
+                1, ...
+                obj.nGUIWidth - obj.nLeftWidth + 1, ...
+                obj.nPanelHeight_SaveResult];
+            obj.hPanel_SaveResult.Title = 'Save Result';
             
             % Button: SaveToPhone
-            obj.hButton_SaveToPhone = uibutton(obj.hPanel_Controls);
+            obj.hButton_SaveToPhone = uibutton(obj.hPanel_SaveResult);
             obj.hButton_SaveToPhone.Position = [ ...
                 obj.nInterval_Horizontal, ...
                 2 * obj.nInterval_Vertical + 1 * obj.nButtonHeight, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
-            obj.hButton_SaveToPhone.Text = 'Save';
+            obj.hButton_SaveToPhone.Text = 'Phone';
             obj.hButton_SaveToPhone.ButtonPushedFcn = @obj.callbackSaveToPhone;
-            
-            % Label: SaveInfo
-            obj.hLabel_SaveInfo = uilabel(obj.hPanel_Controls);
-            obj.hLabel_SaveInfo.Position = [ ...
-                obj.nInterval_Horizontal + 3, ...
-                2 * obj.nInterval_Vertical, ...
-                2 * obj.nButtonWidth, ...
-                obj.nButtonHeight];
-            obj.hLabel_SaveInfo.Text = 'Save to Disk';
-            
+                         
             % Button: SaveInfo
-            obj.hButton_SaveInfo = uibutton(obj.hPanel_Controls);
+            obj.hButton_SaveInfo = uibutton(obj.hPanel_SaveResult);
             obj.hButton_SaveInfo.Position = [ ...
                 obj.nInterval_Horizontal, ...
                 obj.nInterval_Vertical, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
-            obj.hButton_SaveInfo.Text = 'Save';
+            obj.hButton_SaveInfo.Text = 'Disk';
             obj.hButton_SaveInfo.ButtonPushedFcn = @obj.callbackSaveToDisk;
-            
             
             
             % Panel: Lamps
@@ -464,6 +436,8 @@ classdef IHAB_SystemCheck < handle
             obj.hDropDown_Input.ValueChangedFcn = @obj.callback_DropDownAudioInput;
             obj.hDropDown_Input.Items = {''};
             obj.hDropDown_Input.Enable = 'Off';
+            
+            drawnow;
             
         end
         
@@ -613,13 +587,21 @@ classdef IHAB_SystemCheck < handle
             drawnow;
             
         end
+        
+        function [] = callbackCheckDevice(obj, ~, ~)
+           
+            if obj.bEnableButtons
+               obj.checkDevice(); 
+            end
+            
+        end
        
         function [bMobileDevice] = checkDevice(obj, ~, ~)
             
             obj.bEnableButtons = false;
-            
             obj.bMobileDevice = false;
             bMobileDevice = false;
+            
             % make sure only one device is connected
             sTestDevices = [obj.prefix,'adb devices'];
             [~, sList] = system(sTestDevices);
@@ -638,6 +620,8 @@ classdef IHAB_SystemCheck < handle
                 bMobileDevice = true;
             end
             
+            % Check if activity is running. if not: start, if it does:
+            % restart
             [~, temp] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
             if contains(temp, 'Bad activity command')
                 system('adb shell am start -n com.example.IHABSystemCheck/.MainActivity');
@@ -646,6 +630,7 @@ classdef IHAB_SystemCheck < handle
 
             end
             
+            % Wait and check if application is running as expected
             sData = '';
             while ~contains(sData, 'Waiting')
                 [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
