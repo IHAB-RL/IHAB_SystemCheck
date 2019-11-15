@@ -62,18 +62,14 @@ public class MainActivity extends AppCompatActivity {
                         mInputProfile_RFCOMM.setInterface();
                         break;
                     case "Stop":
-                        //mInputProfile_RFCOMM.stopRecording();
                         mInputProfile_RFCOMM.cleanUp();
                         setIsRecording(false);
                         break;
                     case "Finished":
                         setIsFinished(true);
-                        //mInputProfile_RFCOMM.cleanUp();
-                        //mInputProfile_RFCOMM = null;
                         break;
                     case "Reset":
                         reset();
-                        //mInputProfile_RFCOMM = new InputProfile_RFCOMM(MainActivity.this, mActivityMessenger);
                         break;
 
                 }
