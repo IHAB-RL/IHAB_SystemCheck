@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
                     case "Reset":
                         reset();
                         break;
-
                 }
 
             } catch (Exception e) {
@@ -106,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
 
         mSymbol = findViewById(R.id.symbol);
 
-        //requestPermissions(MY_PERMISSIONS_RECORD_AUDIO);
+        requestPermissions(MY_PERMISSIONS_RECORD_AUDIO);
 
         // Create home directory
         String path = AudioFileIO.getMainFolderPath();
@@ -149,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void reset() {
+
         finishAffinity();
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
         startActivity(intent);
@@ -244,4 +244,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
 }

@@ -538,7 +538,8 @@ classdef IHAB_SystemCheck < handle
             
             switch sImage
                 case 'connectDevice'
-                    obj.hLamp_Measurement.Color = obj.mColors(3, :);
+                    obj.hLamp_Measurement.Color = obj.mColors(2, :);
+                    obj.hLamp_Device.Color = obj.mColors(2, :);
                     mImage = imread(['images', filesep, 'img_connectDevice.jpg']);
                 case 'setUpCalibrator'
                     obj.hLamp_Calibration.Color = obj.mColors(3, :);
@@ -609,15 +610,20 @@ classdef IHAB_SystemCheck < handle
                 errordlg('Too many devices connected.', 'Error');
                 obj.bMobileDevice = 0;
                 obj.hLamp_Device.Color = obj.mColors(2, :);
+                obj.showImage('connectDevice');
+                return;
             elseif (length(splitlines(sList)) < 4)
                 errordlg('No device connected.', 'Error');
                 obj.bMobileDevice = 0;
                 obj.hLamp_Device.Color = obj.mColors(2, :);
+                obj.showImage('connectDevice');
+                return;
             elseif (contains(sList, 'List'))
                 obj.bMobileDevice = true;
                 obj.hLamp_Device.Color = obj.mColors(5, :);
                 obj.bMobileDevice = true;
                 bMobileDevice = true;
+                obj.showImage('');
             end
             
             % Check if activity is running. if not: start, if it does:
@@ -885,7 +891,7 @@ classdef IHAB_SystemCheck < handle
             fclose(hFid);
         end
         
-        function [] = doNothing(obj)
+        function [] = doNothing(obj, ~, ~)
             return;
         end
         
