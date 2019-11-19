@@ -707,6 +707,9 @@ classdef IHAB_SystemCheck < handle
                 
             end
             
+            % Write recording to file for offline analysis (TODO: omit)
+            audiowrite('recording_Calibration.wav', vCalibration, obj.nSamplerate);
+            
             % HighPass
             [b, a] = butter(2, 100*2*pi/obj.nSamplerate, 'high');
             vCalibration = filter(b, a, vCalibration);
@@ -839,6 +842,10 @@ classdef IHAB_SystemCheck < handle
         function [] = finishTFMeasurement(obj) 
            
             vSystem = obj.phoneGetRecording();
+            
+            % Write recording to file for offline analysis (TODO: omit)
+            audiowrite('recording_TF_RefMic.wav', obj.vRefMic, obj.nSamplerate);
+            audiowrite('recording_TF_System.wav', vSystem, obj.nSamplerate);
             
             nLevel_RefMic_dBFS = 20*log10(rms(obj.vRefMic));
 %             nLevel_RefMic_dBSPL = nLevel_RefMic_dBFS + obj.nCalibConstant_Mic_FS_SPL; 
