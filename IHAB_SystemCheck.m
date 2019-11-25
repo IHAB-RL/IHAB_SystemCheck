@@ -87,16 +87,16 @@ classdef IHAB_SystemCheck < handle
         hToggle_Output_L;
         hToggle_Output_R;
         
-        nSamplerate = 48000;
-        nBlockSize = 1024*2;
-        nDurationCalibration_s = 15;
+        nSamplerate = 16000;
+        nBlockSize = 512;
+        nDurationCalibration_s = 5;
         nCalibConstant_Mic_FS_SPL;
         nSystemCalibConstant;
         nLevel_Calib_dBSPL;
         nLevel_Calib_dBFS;
         nCalibConstant_System;
         vCalibConstant_System;
-        nDurationMeasurement_s = 15;
+        nDurationMeasurement_s = 5;
         vTransferFunction;
         vOriginal_rec;
         vRefMic_rec;
@@ -750,7 +750,7 @@ classdef IHAB_SystemCheck < handle
             
             nSamples = obj.nDurationCalibration_s * obj.nSamplerate;
             nBlocks = ceil(nSamples/obj.nBlockSize);
-            vCalibration = zeros(nSamples, numChannels);
+            vCalibration = zeros(nSamples, 1);
             
             % Pre-recording to supress silence at start
             for iBlock = 1:10
@@ -763,16 +763,16 @@ classdef IHAB_SystemCheck < handle
                 iIn = (iBlock-1)*obj.nBlockSize + 1;
                 iOut = iIn + obj.nBlockSize - 1;
                 
-                vCalibration(iIn:iOut, :) = msound('getSamples');
+                vTemp = msound('getSamples');
+                if obj.hToggle_Input_L.Value
+                    vCalibration(iIn:iOut) = vTemp(:, 1);
+                else
+                    vCalibration(iIn:iOut) = vTemp(:, 2);
+                end
+                
                 plot(obj.hAxes, vCalibration(iIn:iOut), 'Color', obj.mColors(1, :));
                 drawnow;
                 
-            end
-            
-            if obj.hToggle_Input_L.Value
-                vCalibration(:, 2) = [];
-            else 
-                vCalibration(:, 1) = [];
             end
             
             % Write recording to file for offline analysis (TODO: omit)
@@ -836,7 +836,7 @@ classdef IHAB_SystemCheck < handle
             obj.bMeasurement = false;
             
             obj.showImage('');
-            
+%             
             msound('close');
             
             nNumChannels_In = 2;
@@ -851,18 +851,17 @@ classdef IHAB_SystemCheck < handle
             nSamples = obj.nDurationMeasurement_s * obj.nSamplerate;
             nBlocks = floor(nSamples/obj.nBlockSize);
             
-            vNoise = 2 * rand(nSamples, nNumChannels_Out) - 1;
+            vNoise = 2 * rand(nSamples, 1) - 1;
+            % Write recording to file for offline analysis (TODO: omit)
+            audiowrite('recording_Noise.wav', vNoise, obj.nSamplerate);
             
             if obj.hToggle_Output_L.Value
-                vNoise(:, 2) = [];
+                vNoise = [vNoise, zeros(size(vNoise))];
             else 
-                vNoise(:, 1) = [];
+                vNoise = [zeros(size(vNoise)), vNoise];
             end
             
-            % Write recording to file for offline analysis (TODO: omit)
-            audiowrite('recording_TF_Noise.wav', vNoise, obj.nSamplerate);
             obj.vRefMic = zeros(nSamples, 1);
-            
             obj.vOriginal_rec = zeros(obj.nBlockSize, 1);
             obj.vRefMic_rec = zeros(obj.nBlockSize, 1);
             
@@ -872,20 +871,38 @@ classdef IHAB_SystemCheck < handle
             
             obj.hAxes.Visible = 'On';
             
+            fprintf('Measuring silence.\n')
+            
+            for iBlock = 1 : nBlocks
+               
+                iIn = (iBlock-1)*obj.nBlockSize + 1;
+                iOut = iIn + obj.nBlockSize - 1;
+                
+                vTemp = msound('getSamples');
+                if obj.hToggle_Input_L.Value
+                    vSilence(iIn:iOut) = vTemp(:, 1);
+                else
+                    vSilence(iIn:iOut) = vTemp(:, 2);
+                end
+                
+            end
+           
+            fprintf('Measuring Noise.\n');
+            
             % Playback of Noise signal
             for iBlock = 1 : nBlocks
                 
                 iIn = (iBlock-1)*obj.nBlockSize + 1;
                 iOut = iIn + obj.nBlockSize - 1;
                 
-                msound('putSamples', vNoise(iIn:iOut));
+                msound('putSamples', vNoise(iIn:iOut, :));
                 
                 vTemp = msound('getSamples');
                 
                 if obj.hToggle_Input_L.Value
-                    obj.vRefMic(iIn:iOut, :) = vTemp(:, 1);
+                    obj.vRefMic(iIn:iOut) = vTemp(:, 1);
                 else
-                    obj.vRefMic(iIn:iOut, :) = vTemp(:, 2);
+                    obj.vRefMic(iIn:iOut) = vTemp(:, 2);
                 end
                 
                 obj.vOriginal_rec = nAlpha*obj.vOriginal_rec + (1-nAlpha)*vNoise(iIn:iOut);
@@ -900,23 +917,25 @@ classdef IHAB_SystemCheck < handle
                     obj.hAxes.NextPlot = 'add';
                     hPlot_Ref = semilogx(obj.hAxes, vSpec_RefMic(1:end/2+1), 'Color', obj.mColors(2, :));
                     obj.hAxes.XLim = [1, obj.nBlockSize/2+1];
+                    
+                    obj.hAxes.Box = 'On';
+                    obj.hAxes.Layer = 'Top';
+                    obj.hAxes.YLim = [-100, 50];
+                    obj.hAxes.XTick = [];
+                    obj.hAxes.YTick = [];
                 else
                     nPlot_Orig.YData = vSpec_Original(1:end/2+1);
                     hPlot_Ref.YData = vSpec_RefMic(1:end/2+1);
                 end
-                
-                obj.hAxes.Box = 'On';
-                obj.hAxes.Layer = 'Top';
-                obj.hAxes.YLim = [-100, 50];
-                obj.hAxes.XTick = [];
-                obj.hAxes.YTick = [];
-                
-                
+               
                 drawnow;
                 
             end
             
             msound('close');
+            
+            % Write recording to file for offline analysis (TODO: omit)
+            audiowrite('recording_RefMic_Silence.wav', vSilence, obj.nSamplerate);
             
             obj.phoneStopRecording();
             
@@ -925,10 +944,16 @@ classdef IHAB_SystemCheck < handle
         function [] = finishTFMeasurement(obj) 
            
             vSystem = obj.phoneGetRecording();
+            vIdx = obj.findNoiseIdx(vSystem);
+            vSystem_Silence = vSystem(vIdx(1):vIdx(2),:);
+            vSystem_Noise = vSystem(vIdx(3):vIdx(4),:);
+            
+            fprintf('Got it.\n');
             
             % Write recording to file for offline analysis (TODO: omit)
-            audiowrite('recording_TF_RefMic.wav', obj.vRefMic, obj.nSamplerate);
-            audiowrite('recording_TF_System.wav', vSystem, obj.nSamplerate);
+            audiowrite('recording_RefMic_Noise.wav', obj.vRefMic, obj.nSamplerate);
+            audiowrite('recording_TF_System_Noise.wav', vSystem_Noise, obj.nSamplerate);
+            audiowrite('recording_TF_System_Silence.wav', vSystem_Silence, obj.nSamplerate);
             
             nLevel_RefMic_dBFS = 20*log10(rms(obj.vRefMic));
 %             nLevel_RefMic_dBSPL = nLevel_RefMic_dBFS + obj.nCalibConstant_Mic_FS_SPL; 
@@ -974,7 +999,6 @@ classdef IHAB_SystemCheck < handle
             
         end
         
-        
         function [] = writeCalibrationToFile(obj, nLevel)
             hFid = fopen([pwd, filesep, 'calibration', filesep, obj.sFileName_Calib], 'w');
             fprintf(hFid, '%f', nLevel);
@@ -983,6 +1007,28 @@ classdef IHAB_SystemCheck < handle
         
         function [] = doNothing(obj, ~, ~)
             return;
+        end
+        
+        function [vIdx] = findNoiseIdx(obj, vSignal)
+           
+            vSignal = vSignal - mean(vSignal);
+            nLevelStart = mean(rms(vSignal(1*obj.nSamplerate : 3*obj.nSamplerate, :)));
+            nIdx = find(mean(abs(vSignal), 2) > nLevelStart*10);
+            nIdx_Noise_Start = nIdx(1);
+            nIdx_Noise_Start_safe = nIdx_Noise_Start + 1*obj.nSamplerate;
+            nIdx_Noise_End = nIdx(end);
+            nIdx_Noise_End_safe = nIdx_Noise_End - 1*obj.nSamplerate;
+            
+            nIdx_Silence_End = nIdx_Noise_Start - obj.nSamplerate;
+            nIdx_Silence_Start = nIdx_Silence_End - 3*obj.nSamplerate;
+            
+%             plot(vSignal);
+%             hold on;
+%             plot([1,1]*nIdx_Start_safe, [-1,1],'k');
+%             plot([1,1]*nIdx_End_safe, [-1,1],'k');
+%             hold off;
+%             
+            vIdx = [nIdx_Silence_Start, nIdx_Silence_End, nIdx_Noise_Start_safe, nIdx_Noise_End_safe];
         end
         
         function [] = phoneStartRecording(obj, ~, ~)
@@ -996,8 +1042,6 @@ classdef IHAB_SystemCheck < handle
                 pause(0.1);
             end
             
-            pause(15);
-           
             obj.performTFMeasurement();
             
         end
@@ -1016,14 +1060,15 @@ classdef IHAB_SystemCheck < handle
             sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Finished"';
             [~, ~] = system(sCommand);
             
-            pause(15);
-            
             obj.finishTFMeasurement();
             
         end
         
         function [vRecording] = phoneGetRecording(obj)
-            vRecording = 2*rand(obj.nDurationMeasurement_s * obj.nSamplerate, 2) - 1;
+            
+            [~, ~] =  system(['adb pull sdcard/IHABSystemCheck/cache/SystemCheck.wav ', pwd]);
+            vRecording = audioread([pwd, filesep, 'SystemCheck.wav']);
+            delete('SystemCheck.wav');
         end
         
         function [] = callbackSaveToDisk(obj, ~, ~)
@@ -1106,7 +1151,7 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = closeApp(obj)
-           system('adb shell am force-stop com.example.IHABSystemCheck'); 
+           [~, ~] =  system('adb shell am force-stop com.example.IHABSystemCheck'); 
         end
           
     end
