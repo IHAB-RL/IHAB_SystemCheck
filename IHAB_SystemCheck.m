@@ -22,6 +22,7 @@ classdef IHAB_SystemCheck < handle
         nDropDownWidth = 200;
         nDropDownHeight = 20;
         nTextHeight = 20;
+        nToggleWidth = 20;
         
         nPanelHeight_SaveResult;
         nPanelHeight_Measurement;
@@ -79,16 +80,23 @@ classdef IHAB_SystemCheck < handle
         hDropDown_Input;
         hLabel_Output;
         hDropDown_Output;
+        hButtonGroup_Input;
+        hButtonGroup_Output;
+        hToggle_Input_L;
+        hToggle_Input_R;
+        hToggle_Output_L;
+        hToggle_Output_R;
         
         nSamplerate = 48000;
         nBlockSize = 1024*2;
-        nDurationCalibration_s = 1;
+        nDurationCalibration_s = 15;
         nCalibConstant_Mic_FS_SPL;
         nSystemCalibConstant;
         nLevel_Calib_dBSPL;
         nLevel_Calib_dBFS;
         nCalibConstant_System;
-        nDurationMeasurement_s = 2;
+        vCalibConstant_System;
+        nDurationMeasurement_s = 15;
         vTransferFunction;
         vOriginal_rec;
         vRefMic_rec;
@@ -417,6 +425,33 @@ classdef IHAB_SystemCheck < handle
             obj.hDropDown_Output.Items = {''};
             obj.hDropDown_Output.Enable = 'Off';
             
+            % ToggleGroup: Output
+            obj.hButtonGroup_Output = uibuttongroup(obj.hPanel_Hardware);
+            obj.hButtonGroup_Output.Position = [ ...
+                obj.nInterval_Horizontal + obj.nDropDownWidth + 10, ...
+                2 * obj.nDropDownInterval + obj.nDropDownHeight + obj.nTextHeight, ...
+                2 * obj.nToggleWidth + 4, ...
+                obj.nDropDownHeight];
+            obj.hButtonGroup_Output.BorderType = 'none';
+            
+            % ToggleButton: Output L
+            obj.hToggle_Output_L = uitogglebutton(obj.hButtonGroup_Output);
+            obj.hToggle_Output_L.Position = [ ...
+                1, ...
+                1, ...
+                obj.nToggleWidth, ...
+                obj.nDropDownHeight];
+            obj.hToggle_Output_L.Text = 'L';
+            
+            % ToggleButton: Output R
+            obj.hToggle_Output_R = uitogglebutton(obj.hButtonGroup_Output);
+            obj.hToggle_Output_R.Position = [ ...
+                obj.nToggleWidth + 2, ...
+                1, ...
+                obj.nToggleWidth, ...
+                obj.nDropDownHeight];
+            obj.hToggle_Output_R.Text = 'R';
+            
             % Label: Input
             obj.hLabel_Input = uilabel(obj.hPanel_Hardware);
             obj.hLabel_Input.Position = [ ...
@@ -436,6 +471,33 @@ classdef IHAB_SystemCheck < handle
             obj.hDropDown_Input.ValueChangedFcn = @obj.callback_DropDownAudioInput;
             obj.hDropDown_Input.Items = {''};
             obj.hDropDown_Input.Enable = 'Off';
+            
+            % ToggleGroup: Input
+            obj.hButtonGroup_Input = uibuttongroup(obj.hPanel_Hardware);
+            obj.hButtonGroup_Input.Position = [ ...
+                obj.nInterval_Horizontal + obj.nDropDownWidth + 10, ...
+                obj.nDropDownInterval, ...
+                2 * obj.nToggleWidth + 4, ...
+                obj.nDropDownHeight];
+            obj.hButtonGroup_Input.BorderType = 'none';
+            
+            % ToggleButton: Input L
+            obj.hToggle_Input_L = uitogglebutton(obj.hButtonGroup_Input);
+            obj.hToggle_Input_L.Position = [ ...
+                1, ...
+                1, ...
+                obj.nToggleWidth, ...
+                obj.nDropDownHeight];
+            obj.hToggle_Input_L.Text = 'L';
+            
+            % ToggleButton: Input R
+            obj.hToggle_Input_R = uitogglebutton(obj.hButtonGroup_Input);
+            obj.hToggle_Input_R.Position = [ ...
+                obj.nToggleWidth + 2, ...
+                1, ...
+                obj.nToggleWidth, ...
+                obj.nDropDownHeight];
+            obj.hToggle_Input_R.Text = 'R';
             
             drawnow;
             
@@ -677,7 +739,7 @@ classdef IHAB_SystemCheck < handle
             
             msound('close');
             
-            numChannels = 1;
+            numChannels = 2;
             
             % Open Input Device
             msound('openRead', ...
@@ -701,10 +763,16 @@ classdef IHAB_SystemCheck < handle
                 iIn = (iBlock-1)*obj.nBlockSize + 1;
                 iOut = iIn + obj.nBlockSize - 1;
                 
-                vCalibration(iIn:iOut) = msound('getSamples');
+                vCalibration(iIn:iOut, :) = msound('getSamples');
                 plot(obj.hAxes, vCalibration(iIn:iOut), 'Color', obj.mColors(1, :));
                 drawnow;
                 
+            end
+            
+            if obj.hToggle_Input_L.Value
+                vCalibration(:, 2) = [];
+            else 
+                vCalibration(:, 1) = [];
             end
             
             % Write recording to file for offline analysis (TODO: omit)
@@ -751,7 +819,7 @@ classdef IHAB_SystemCheck < handle
 
                     sData = '';
                     while ~contains(sData, 'Waiting')
-                        [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck')
+                        [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
                         pause(0.1);
                     end
 
@@ -771,8 +839,8 @@ classdef IHAB_SystemCheck < handle
             
             msound('close');
             
-            nNumChannels_In = 1;
-            nNumChannels_Out = 1;
+            nNumChannels_In = 2;
+            nNumChannels_Out = 2;
            
             msound('openRW', ...
                 [obj.nAudioInput, obj.nAudioOutput], ...
@@ -783,7 +851,16 @@ classdef IHAB_SystemCheck < handle
             nSamples = obj.nDurationMeasurement_s * obj.nSamplerate;
             nBlocks = floor(nSamples/obj.nBlockSize);
             
-            vNoise = 2 * rand(nSamples, 1) - 1;
+            vNoise = 2 * rand(nSamples, nNumChannels_Out) - 1;
+            
+            if obj.hToggle_Output_L.Value
+                vNoise(:, 2) = [];
+            else 
+                vNoise(:, 1) = [];
+            end
+            
+            % Write recording to file for offline analysis (TODO: omit)
+            audiowrite('recording_TF_Noise.wav', vNoise, obj.nSamplerate);
             obj.vRefMic = zeros(nSamples, 1);
             
             obj.vOriginal_rec = zeros(obj.nBlockSize, 1);
@@ -803,7 +880,13 @@ classdef IHAB_SystemCheck < handle
                 
                 msound('putSamples', vNoise(iIn:iOut));
                 
-                obj.vRefMic(iIn:iOut) = msound('getSamples');
+                vTemp = msound('getSamples');
+                
+                if obj.hToggle_Input_L.Value
+                    obj.vRefMic(iIn:iOut, :) = vTemp(:, 1);
+                else
+                    obj.vRefMic(iIn:iOut, :) = vTemp(:, 2);
+                end
                 
                 obj.vOriginal_rec = nAlpha*obj.vOriginal_rec + (1-nAlpha)*vNoise(iIn:iOut);
                 obj.vRefMic_rec = nAlpha*obj.vRefMic_rec + (1-nAlpha)*obj.vRefMic(iIn:iOut);
@@ -912,6 +995,8 @@ classdef IHAB_SystemCheck < handle
                 [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
                 pause(0.1);
             end
+            
+            pause(15);
            
             obj.performTFMeasurement();
             
@@ -930,6 +1015,8 @@ classdef IHAB_SystemCheck < handle
             
             sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Finished"';
             [~, ~] = system(sCommand);
+            
+            pause(15);
             
             obj.finishTFMeasurement();
             

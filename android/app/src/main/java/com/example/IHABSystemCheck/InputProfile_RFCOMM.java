@@ -35,7 +35,7 @@ public class InputProfile_RFCOMM implements InputProfile {
     private int mWaitInterval = 200;
     private int mReleaseInterval = 0;
     private boolean mIsBound = false;
-    private int mChunklengthInS = 10;
+    private int mChunklengthInS = 120;
     private boolean mIsWave = true;
     private boolean mKeepOpen = false;
 
@@ -316,7 +316,7 @@ public class InputProfile_RFCOMM implements InputProfile {
                 mConnectedThread.stopRecording();
                 mConnectedThread.cancel();
                 //mContext.getVibration().singleBurst();
-                mTaskHandler.postDelayed(mAudioReleaseRunnable, mReleaseInterval);
+                //mTaskHandler.postDelayed(mAudioReleaseRunnable, mReleaseInterval);
             }
         }
     }
