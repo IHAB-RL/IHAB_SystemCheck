@@ -1,0 +1,101 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.example.IHABSystemCheck"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="22"
+8-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml
+9        android:targetSdkVersion="28" />
+9-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml
+10
+11    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+11-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:5:5-71
+11-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:5:22-68
+12    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+12-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:6:5-80
+12-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:6:22-77
+13    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+13-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:7:5-81
+13-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:7:22-78
+14    <uses-permission android:name="android.permission.BLUETOOTH" />
+14-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:8:5-68
+14-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:8:22-65
+15    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+15-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:9:5-74
+15-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:9:22-71
+16    <uses-permission android:name="android.permission.VIBRATE" />
+16-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:10:5-66
+16-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:10:22-63
+17    <uses-permission android:name="android.permission.WAKE_LOCK" />
+17-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:11:5-68
+17-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:11:22-65
+18    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+18-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:12:5-75
+18-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:12:22-72
+19    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+19-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:13:5-75
+19-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:13:22-73
+20
+21    <application
+21-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:16:5-39:19
+22        android:allowBackup="true"
+22-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:17:9-35
+23        android:appComponentFactory="android.support.v4.app.CoreComponentFactory"
+23-->[com.android.support:support-compat:28.0.0] /home/sven/.gradle/caches/transforms-2/files-2.1/f1491a81a65d4033a56d6549564e765e/support-compat-28.0.0/AndroidManifest.xml:22:18-91
+24        android:debuggable="true"
+25        android:icon="@mipmap/ic_launcher"
+25-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:18:9-43
+26        android:label="@string/app_name"
+26-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:19:9-41
+27        android:roundIcon="@mipmap/ic_launcher_round"
+27-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:20:9-54
+28        android:supportsRtl="true"
+28-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:21:9-35
+29        android:testOnly="true"
+30        android:theme="@style/AppTheme" >
+30-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:22:9-40
+31        <activity
+31-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:23:9-29:20
+32            android:name="com.example.IHABSystemCheck.MainActivity"
+32-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:23:19-47
+33            android:configChanges="orientation" >
+33-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:24:13-48
+34            <intent-filter>
+34-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:25:13-28:29
+35                <action android:name="android.intent.action.MAIN" />
+35-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:26:17-69
+35-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:26:25-66
+36
+37                <category android:name="android.intent.category.LAUNCHER" />
+37-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:27:17-77
+37-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:27:27-74
+38            </intent-filter>
+39        </activity>
+40        <activity
+40-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:31:9-32:51
+41            android:name="com.example.IHABSystemCheck.bluetoothspp.library.DeviceList"
+41-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:31:20-67
+42            android:configChanges="orientation" />
+42-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:32:13-48
+43
+44        <receiver
+44-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:34:9-38:20
+45            android:name="com.example.IHABSystemCheck.IntentReceiver"
+45-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:34:19-76
+46            android:enabled="true"
+46-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:34:77-99
+47            android:exported="true" >
+47-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:34:100-123
+48            <intent-filter android:priority="999" >
+48-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:35:13-37:29
+48-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:35:28-50
+49                <action android:name="com.example.IHABSystemCheck.intent.TEST" />
+49-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:36:17-81
+49-->/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/AndroidManifest.xml:36:25-79
+50            </intent-filter>
+51        </receiver>
+52    </application>
+53
+54</manifest>

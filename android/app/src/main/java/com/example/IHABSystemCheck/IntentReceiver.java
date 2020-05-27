@@ -31,6 +31,10 @@ public class IntentReceiver extends BroadcastReceiver {
                 case "Reset":
                     context.sendBroadcast(new Intent("command").putExtra("do","Reset"));
                     break;
+
+                case "StoreCalibration":
+                    context.sendBroadcast(new Intent("command").putExtra("do","StoreCalibration"));
+                    break;
             }
         } catch (Exception e) {
         }

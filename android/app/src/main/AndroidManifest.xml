@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+
 
     <application
         android:allowBackup="true"
@@ -18,19 +20,22 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:configChanges="orientation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <receiver android:name="com.example.IHABSystemCheck.IntentReceiver" android:enabled="true">
+        <activity  android:name=".bluetoothspp.library.DeviceList"
+            android:configChanges="orientation" />
+
+        <receiver android:name="com.example.IHABSystemCheck.IntentReceiver" android:enabled="true" android:exported="true">
             <intent-filter android:priority="999">
                 <action android:name="com.example.IHABSystemCheck.intent.TEST"/>
             </intent-filter>
         </receiver>
-
     </application>
 
 

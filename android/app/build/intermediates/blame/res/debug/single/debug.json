@@ -1,0 +1,86 @@
+[
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/layout_device_name.xml.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/layout/device_name.xml"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/layout_device_list.xml.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/layout/device_list.xml"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/drawable_hourglass_snooze.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/drawable/hourglass_snooze.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/layout_activity_main.xml.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/drawable_hourglass.gif.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/drawable/hourglass.gif"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/drawable_check.gif.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/drawable/check.gif"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/drawable_mic.gif.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/drawable/mic.gif"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/drawable_ic_launcher_background.xml.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/drawable-v24_ic_launcher_foreground.xml.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/build/intermediates/res/merged/debug/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "/home/sven/devel/OLMega/IHAB_SystemCheck/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png"
+    }
+]

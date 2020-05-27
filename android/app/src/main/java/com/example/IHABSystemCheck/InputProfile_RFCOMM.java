@@ -230,11 +230,7 @@ public class InputProfile_RFCOMM implements InputProfile {
         } catch (IllegalArgumentException e) {
             Log.e(LOG, "Receiver not registered: mUUIDReceiver");
         }
-
-        if (MainActivity.getIsRecording()) {
-            stopRecording();
-        }
-        MainActivity.setIsFinished(true);
+        stopRecording();
         mBluetoothAdapter = null;
         System.gc();
     }
@@ -298,7 +294,7 @@ public class InputProfile_RFCOMM implements InputProfile {
 
         Log.e(LOG, "Requested start recording");
 
-        if (!MainActivity.getIsRecording() && mConnectedThread != null) {
+        if (mContext.getState() != MainActivity.state.MEASURING && mConnectedThread != null) {
             Log.d(LOG, "Start caching audio");
             //mContext.getVibration().singleBurst();
             mConnectedThread.start();
@@ -309,7 +305,7 @@ public class InputProfile_RFCOMM implements InputProfile {
 
         Log.e(LOG, "Requested stop recording");
 
-        if (MainActivity.getIsRecording()) {
+        if (mContext.getState() == MainActivity.state.MEASURING) {
             Log.e(LOG, "Requesting stop caching audio");
 
             if (mConnectedThread != null) {

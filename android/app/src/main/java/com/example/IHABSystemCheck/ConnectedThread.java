@@ -76,7 +76,7 @@ public class ConnectedThread extends Thread {
 
         isRecording = true;
         isReleased = false;
-        mContext.setIsRecording(true);
+        mContext.startRecording();
 
 
         int buffer_size = block_size * 4;
@@ -204,9 +204,7 @@ public class ConnectedThread extends Thread {
             stopRecording();
             fileIO.closeDataOutStream();
         }
-
-        mContext.setIsRecording(false);
-        mContext.setIsFinished(true);
+        mContext.stopRecording();
         Log.e(LOG, "Recording stopped.");
 
     }
@@ -228,7 +226,7 @@ public class ConnectedThread extends Thread {
 
         isReleased = true;
         INSTANCE = 0;
-        mContext.setIsRecording(false);
+        mContext.stopRecording();
     }
 
     public boolean getIsReleased() {

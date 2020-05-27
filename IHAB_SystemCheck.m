@@ -108,6 +108,8 @@ classdef IHAB_SystemCheck < handle
         
         sFileName_Calib = 'calib.txt';
         
+        sDeviceAddress = '';
+        
         bMobileDevice = false;
         bAudioDevice = false;
         bCalib = false;
@@ -122,8 +124,8 @@ classdef IHAB_SystemCheck < handle
     
     methods
         
-        function obj = IHAB_SystemCheck()
-            
+        function obj = IHAB_SystemCheck()     
+            close all;
             addpath('functions');
             addpath('msound');
             
@@ -180,8 +182,34 @@ classdef IHAB_SystemCheck < handle
             
             obj.checkAudioHardware();
             
+            obj.loadSetting();
+            
 %             obj.hMessage.stop();
-           
+        end
+        
+        function [] = loadSetting(obj)
+            if exist('recording_Calibration.wav', 'file')
+                sResult = questdlg('Load existing calibartion?', 'Calibration', 'Yes','No', 'Yes');
+                if (strcmp(sResult, 'Yes'))
+                    [vCalibration, obj.nSamplerate] = audioread('recording_Calibration.wav');
+                    obj.calculateCalibration(vCalibration);
+                end
+            end
+            if exist('settings.mat', 'file')
+                load('settings.mat', 'nAudioOutputValue', 'nAudioInputValue', 'hToggle_Output_L_Value', 'hToggle_Input_L_Value');
+                obj.hToggle_Output_L.Value = hToggle_Output_L_Value;
+                obj.hToggle_Input_L.Value = hToggle_Input_L_Value;
+                val.Value = nAudioOutputValue;
+                if find(ismember(obj.hDropDown_Output.Items, val.Value))
+                    obj.hDropDown_Output.Value = val.Value;
+                    obj.callback_DropDownAudioOutput(-1, val);
+                end
+                val.Value = nAudioInputValue;
+                if find(ismember(obj.hDropDown_Input.Items, val.Value))
+                    obj.hDropDown_Input.Value = val.Value;
+                    obj.callback_DropDownAudioInput(-1, val);
+                end
+            end
         end
         
         function [] = buildGUI(obj)
@@ -479,6 +507,7 @@ classdef IHAB_SystemCheck < handle
                 2 * obj.nDropDownInterval + obj.nDropDownHeight + obj.nTextHeight, ...
                 2 * obj.nToggleWidth + 4, ...
                 obj.nDropDownHeight];
+            obj.hButtonGroup_Output.SelectionChangedFcn = @obj.callback_ToggleButtonValueChanged;
             obj.hButtonGroup_Output.BorderType = 'none';
             
             % ToggleButton: Output L
@@ -526,6 +555,7 @@ classdef IHAB_SystemCheck < handle
                 obj.nDropDownInterval, ...
                 2 * obj.nToggleWidth + 4, ...
                 obj.nDropDownHeight];
+            obj.hButtonGroup_Input.SelectionChangedFcn = @obj.callback_ToggleButtonValueChanged;
             obj.hButtonGroup_Input.BorderType = 'none';
             
             % ToggleButton: Input L
@@ -578,7 +608,7 @@ classdef IHAB_SystemCheck < handle
             
             for stDev = stDevices'
                 
-                if (stDev.inputs > 0 && stDev.outputs == 0)
+                if (stDev.inputs > 0)
                     if (isempty(obj.stAudioInput))
                         obj.stAudioInput = stDev;
                         obj.cAudioInput = {stDev.name};
@@ -586,7 +616,8 @@ classdef IHAB_SystemCheck < handle
                         obj.stAudioInput(end+1) = stDev;
                         obj.cAudioInput{end+1} = stDev.name;
                     end
-                elseif (stDev.inputs == 0 && stDev.outputs > 0)
+                end
+                if (stDev.outputs > 0)
                     if (isempty(obj.stAudioOutput))
                         obj.stAudioOutput = stDev;
                         obj.cAudioOutput = {stDev.name};
@@ -627,24 +658,38 @@ classdef IHAB_SystemCheck < handle
             
         end
         
-        function [] = callback_DropDownAudioOutput(obj, ~ , val)
+        function [] = callback_DropDownAudioOutput(obj, tmp , val)
             
             for iDevice = 1 : length(obj.stAudioOutput)
                 if strcmp(obj.stAudioOutput(iDevice).name, val.Value)
                     obj.nAudioOutput = obj.stAudioOutput(iDevice).id;
+                    if tmp ~= -1
+                        obj.callback_ToggleButtonValueChanged();
+                    end
                     break;
                 end
             end
         end
         
-        function [] = callback_DropDownAudioInput(obj, ~ , val)
+        function [] = callback_DropDownAudioInput(obj, tmp , val)
             
             for iDevice = 1 : length(obj.stAudioInput)
                 if strcmp(obj.stAudioInput(iDevice).name, val.Value)
                     obj.nAudioInput = obj.stAudioInput(iDevice).id;
+                    if tmp ~= -1
+                        obj.callback_ToggleButtonValueChanged();
+                    end
                     break;
                 end
             end
+        end
+        
+        function [] = callback_ToggleButtonValueChanged(obj, ~, ~)
+            nAudioOutputValue = obj.hDropDown_Output.Value;
+            nAudioInputValue = obj.hDropDown_Input.Value;
+            hToggle_Output_L_Value = obj.hToggle_Output_L.Value;
+            hToggle_Input_L_Value = obj.hToggle_Input_L.Value;
+            save('settings.mat', 'nAudioOutputValue', 'nAudioInputValue', 'hToggle_Output_L_Value', 'hToggle_Input_L_Value');
         end
         
         function [] = showImage(obj, sImage)
@@ -660,13 +705,13 @@ classdef IHAB_SystemCheck < handle
                     obj.hLamp_Saved.Color = obj.mColors(2, :);
                     % Reset color of measurement lamp
                     obj.hLamp_Measurement.Color = obj.mColors(2, :);
-                    mImage = imread(['images', filesep, 'img_setUpCalibrator.png']);
+                    mImage = imread(['images', filesep, 'img_setupCalibrator.png']);
                 case 'setUpMeasurement'
                     obj.hEdit_Constant.Value = '';
                     obj.hLamp_Measurement.Color = obj.mColors(3, :);
                     % Reset color of saved lamp
                     obj.hLamp_Saved.Color = obj.mColors(2, :);
-                    mImage = imread(['images', filesep, 'img_setUpMeasurement.png']);
+                    mImage = imread(['images', filesep, 'img_setupMeasurement.png']);
                 case ''
 %                     mImage = [];
                     mImage = imread(['images', filesep, 'img_standard.png']);
@@ -737,6 +782,7 @@ classdef IHAB_SystemCheck < handle
             
             if obj.bEnableButtons
                 obj.resetApplication();
+                obj.loadSetting();
             end
             
         end
@@ -758,6 +804,16 @@ classdef IHAB_SystemCheck < handle
             obj.bMobileDevice = false;
             bMobileDevice = false;
             
+            set(obj.hButton_Calibration, 'Enable', 'off');
+            set(obj.hButton_CheckDevice, 'Enable', 'off');
+            set(obj.hButton_CloseApp, 'Enable', 'off');
+            set(obj.hButton_SaveInfo, 'Enable', 'off');
+            set(obj.hButton_SaveToPhone, 'Enable', 'off');
+            set(obj.hButton_Start, 'Enable', 'off');
+            
+            obj.hInfoField.String = 'Please wait (or restart IHABSystemCheck-App after several Minutes)...';
+            drawnow;
+
             % make sure only one device is connected
             sTestDevices = [obj.prefix,'adb devices'];
             [~, sList] = system(sTestDevices);
@@ -785,14 +841,17 @@ classdef IHAB_SystemCheck < handle
                 drawnow;
             end
             
+            obj.closeApp()
             % Check if activity is running. if not: start, if it does:
             % restart
             [~, temp] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
             if contains(temp, 'Bad activity command')
                 [~, ~] = system('adb shell am start -n com.example.IHABSystemCheck/.MainActivity');
             else
-                [~, ~] = system('adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Reset"');
+                [~, ~] = system('adb shell "am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body ''Reset'' -n com.example.IHABSystemCheck/.IntentReceiver --include-stopped-packages"');
             end
+            obj.hInfoField.String = 'Please ''Activate'' IHABSystemCheck-App';
+            drawnow;
             
             % Wait and check if application is running as expected
             sData = '';
@@ -800,8 +859,21 @@ classdef IHAB_SystemCheck < handle
                 [~, sData] = system('adb shell dumpsys activity com.example.IHABSystemCheck');
                 pause(0.1);
             end
-            
+            if contains(sData, 'DEVCIE=')
+                tempdata = split(sData,'DEVCIE=');
+                tempdata = split(tempdata{2}, ';');
+                obj.sDeviceAddress = char(tempdata{1});
+                obj.sFileName_Calib = [obj.sDeviceAddress '.txt'];
+            end
             obj.bEnableButtons = true;
+            set(obj.hButton_Calibration, 'Enable', 'on');
+            set(obj.hButton_CheckDevice, 'Enable', 'on');
+            set(obj.hButton_CloseApp, 'Enable', 'on');
+            set(obj.hButton_SaveInfo, 'Enable', 'on');
+            set(obj.hButton_SaveToPhone, 'Enable', 'on');
+            set(obj.hButton_Start, 'Enable', 'on');
+            obj.hInfoField.String = '';
+            drawnow;
             
         end
         
@@ -883,7 +955,13 @@ classdef IHAB_SystemCheck < handle
             
             % Write recording to file for offline analysis (TODO: omit)
             audiowrite('recording_Calibration.wav', vCalibration, obj.nSamplerate);
+
+            obj.calculateCalibration(vCalibration);
             
+            obj.bEnableButtons = true;
+        end
+        
+        function calculateCalibration(obj, vCalibration)
             % HighPass
             [b, a] = butter(4, 100*2*pi/obj.nSamplerate, 'high');
             vCalibration = filter(b, a, vCalibration);
@@ -899,10 +977,7 @@ classdef IHAB_SystemCheck < handle
             % Perform check whether calibration result was okay
             if true
                 obj.bCalib = true;
-            end
-            
-            obj.bEnableButtons = true;
-            
+            end            
         end
         
         function [] = callbackPerformTFMeasurement(obj, ~, ~)
@@ -917,9 +992,9 @@ classdef IHAB_SystemCheck < handle
                 sResult = questdlg('Measurement already taken. Redo?', ...
                     'Measurement', 'Yes','No', 'No');
                 if (strcmp(sResult, 'Yes'))
-                    
-                    sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Reset"';
-                    [~, ~] = system(sCommand);
+                    obj.closeApp()
+                    %sCommand = 'adb shell "am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body ''Reset'' -n com.example.IHABSystemCheck/.IntentReceiver"';
+                    %[~, ~] = system(sCommand);
                     
                     sData = '';
                     while ~contains(sData, 'Waiting') && obj.bLoop
@@ -1015,80 +1090,90 @@ classdef IHAB_SystemCheck < handle
         end
         
         function [] = finishTFMeasurement(obj)
-            
-            vSystem = obj.phoneGetRecording();
-           
-            vSystem = vSystem - mean(vSystem);
-            
-            vIdx = obj.findNoiseIdx(vSystem);
-            vSystem_Silence = vSystem(vIdx(1) : vIdx(2), :);
-            vSystem_Noise = vSystem(vIdx(3) : vIdx(4), :);
-           
-            % Calculate Single Value System Calibration Constant
-            L_RefMic_dBFS = 20*log10(rms(obj.vRefMic_Noise));
-            L_IHAB_dBFS = 20*log10(rms(vSystem_Noise));
-            obj.nSystemCalibConstant = obj.nCalibConstant_Mic_FS_SPL - (L_IHAB_dBFS - L_RefMic_dBFS);
-            
-            vDiff_RefMic = 20*log10(rms(obj.vRefMic_Noise)/rms(obj.vRefMic_Silence));
-            vDiff_System = 20*log10(rms(vSystem_Noise)./rms(vSystem_Silence));
-            
-            vSpec_Ref_Silence = 10*log10(pwelch(obj.vRefMic_Silence, obj.nBlockSize));
-            vSpec_Ref_Noise = 10*log10(pwelch(obj.vRefMic_Noise, obj.nBlockSize));
-            vSpec_System_Silence = 10*log10(pwelch(vSystem_Silence, obj.nBlockSize));
-            vSpec_System_Noise = 10*log10(pwelch(vSystem_Noise, obj.nBlockSize));
-            
-            obj.hAxes.Visible = 'On';
-            obj.hAxes.NextPlot = 'replace';
-            
-            semilogx(obj.hAxes, vSpec_Ref_Noise + obj.nCalibConstant_Mic_FS_SPL, 'Color', obj.mColors(1, :));
-            
-            obj.hAxes.NextPlot = 'add';
-            
-            semilogx(obj.hAxes, vSpec_System_Noise(:, 1) + obj.nSystemCalibConstant(1), 'Color', obj.mColors(2, :));
-            semilogx(obj.hAxes, vSpec_System_Noise(:, 2) + obj.nSystemCalibConstant(2), 'Color', obj.mColors(3, :));
-            semilogx(obj.hAxes, vSpec_Ref_Silence + obj.nCalibConstant_Mic_FS_SPL, 'Color', obj.mColors(4, :));
-            semilogx(obj.hAxes, vSpec_System_Silence(:,1) + obj.nSystemCalibConstant(1), 'Color', obj.mColors(5, :));
-            semilogx(obj.hAxes, vSpec_System_Silence(:,2) + obj.nSystemCalibConstant(2), 'Color', obj.mColors(6, :));
-            
-            obj.hAxes.XLim = [0, obj.nBlockSize/2+1];
-            %             obj.hAxes.YLim = [-100, 50];
-            obj.hAxes.XTickLabel = {};
-            obj.hAxes.XTick = [];
-            obj.hAxes.YTickLabel = {};
-            obj.hAxes.YTick = [];
-            
-            obj.hAxes.Box = 'On';
-            obj.hAxes.Layer = 'Top';
-            
-            if (abs(diff(vDiff_System)) > 3)
-                fprintf('Microphone dynamics more than 3 dB apart.\n');
-            end
-            
-            if (abs(vDiff_RefMic - mean(vDiff_System)) >= 3)
-                fprintf('Dynamic disparity between reference and system.\n');
-            end
-            
-            if  (abs(diff(obj.nSystemCalibConstant)) >= 3)
-                fprintf('Microphone levels more than 3 dB apart.\n')
-            end
-            
-            % Check whether calibration result is valid
-            if diff(obj.nSystemCalibConstant) < 2
+            try
+                vSystem = obj.phoneGetRecording();
+
+                vSystem = vSystem - mean(vSystem);
+
+                vIdx = obj.findNoiseIdx(vSystem);
+                vSystem_Silence = vSystem(vIdx(1) : vIdx(2), :);
+                vSystem_Noise = vSystem(vIdx(3) : vIdx(4), :);
+
+                % Calculate Single Value System Calibration Constant
+                L_RefMic_dBFS = 20*log10(rms(obj.vRefMic_Noise));
+                L_IHAB_dBFS = 20*log10(rms(vSystem_Noise));
+                obj.nSystemCalibConstant = obj.nCalibConstant_Mic_FS_SPL - (L_IHAB_dBFS - L_RefMic_dBFS);
+
+                vDiff_RefMic = 20*log10(rms(obj.vRefMic_Noise)/rms(obj.vRefMic_Silence));
+                vDiff_System = 20*log10(rms(vSystem_Noise)./rms(vSystem_Silence));
+
+                vSpec_Ref_Silence = 10*log10(pwelch(obj.vRefMic_Silence, obj.nBlockSize));
+                vSpec_Ref_Noise = 10*log10(pwelch(obj.vRefMic_Noise, obj.nBlockSize));
+                vSpec_System_Silence = 10*log10(pwelch(vSystem_Silence, obj.nBlockSize));
+                vSpec_System_Noise = 10*log10(pwelch(vSystem_Noise, obj.nBlockSize));
+
+                obj.hAxes.Visible = 'On';
+                obj.hAxes.NextPlot = 'replace';
+
+                semilogx(obj.hAxes, vSpec_Ref_Noise + obj.nCalibConstant_Mic_FS_SPL, 'Color', obj.mColors(1, :));
+
+                obj.hAxes.NextPlot = 'add';
+
+                semilogx(obj.hAxes, vSpec_System_Noise(:, 1) + obj.nSystemCalibConstant(1), 'Color', obj.mColors(2, :));
+                semilogx(obj.hAxes, vSpec_System_Noise(:, 2) + obj.nSystemCalibConstant(2), 'Color', obj.mColors(3, :));
+                semilogx(obj.hAxes, vSpec_Ref_Silence + obj.nCalibConstant_Mic_FS_SPL, 'Color', obj.mColors(4, :));
+                semilogx(obj.hAxes, vSpec_System_Silence(:,1) + obj.nSystemCalibConstant(1), 'Color', obj.mColors(5, :));
+                semilogx(obj.hAxes, vSpec_System_Silence(:,2) + obj.nSystemCalibConstant(2), 'Color', obj.mColors(6, :));
+
+                obj.hAxes.XLim = [0, obj.nBlockSize/2+1];
+                %             obj.hAxes.YLim = [-100, 50];
+                obj.hAxes.XTickLabel = {};
+                obj.hAxes.XTick = [];
+                obj.hAxes.YTickLabel = {};
+                obj.hAxes.YTick = [];
+
+                obj.hAxes.Box = 'On';
+                obj.hAxes.Layer = 'Top';
                 
-                obj.writeCalibrationToFile(obj.nSystemCalibConstant);
-                
-                obj.hEdit_Constant.Value = num2str(mean(obj.nSystemCalibConstant));
-                obj.hLamp_Measurement.Color = obj.mColors(5, :);
-                obj.bMeasurement = true;
+                try
+                    legend(obj.hAxes, {'RefCal', 'SystemNoiseL', 'SystemNoiseR', 'RefSilence', 'SystemSilenceL','SystemSilenceR'}, 'Orientation', 'vertical', 'Location', 'south');
+                catch
+                end
+                Image = frame2im(obj.hAxes);
+                imwrite(Image, [pwd, filesep, 'calibration', filesep, replace(obj.sFileName_Calib, '.txt', '.png')]);
+
+                if (abs(diff(vDiff_System)) > 3)
+                    fprintf('Microphone dynamics more than 3 dB apart.\n');
+                end
+
+                if (abs(vDiff_RefMic - mean(vDiff_System)) >= 3)
+                    fprintf('Dynamic disparity between reference and system.\n');
+                end
+
+                if  (abs(diff(obj.nSystemCalibConstant)) >= 3)
+                    fprintf('Microphone levels more than 3 dB apart.\n')
+                end
+
+                % Check whether calibration result is valid
+                if diff(obj.nSystemCalibConstant) < 2
+
+                    obj.writeCalibrationToFile(obj.nSystemCalibConstant);
+
+                    obj.hEdit_Constant.Value = num2str(mean(obj.nSystemCalibConstant));
+                    obj.hLamp_Measurement.Color = obj.mColors(5, :);    
+                    obj.bMeasurement = true;
+                end
+            catch
+                uiwait(msgbox('Error analsing recorded Signal'));
             end
-            
+
             obj.bEnableButtons = true;
             
         end
         
         function [] = writeCalibrationToFile(obj, vLevel)
             hFid = fopen([pwd, filesep, 'calibration', filesep, obj.sFileName_Calib], 'w');
-            fprintf(hFid, '%f', vLevel);
+            fprintf(hFid, '%f\n', vLevel);
             fclose(hFid);
         end
         
@@ -1116,7 +1201,7 @@ classdef IHAB_SystemCheck < handle
         
         function [] = phoneStartRecording(obj, ~, ~)
             
-            sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Start"';
+            sCommand = 'adb shell "am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body ''Start'' -n com.example.IHABSystemCheck/.IntentReceiver --include-stopped-packages"';
             [~, ~] = system(sCommand);
             
             sData = '';
@@ -1131,7 +1216,7 @@ classdef IHAB_SystemCheck < handle
         
         function [] = phoneStopRecording(obj)
             
-            sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Stop"';
+            sCommand = 'adb shell "am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body ''Stop'' -n com.example.IHABSystemCheck/.IntentReceiver --include-stopped-packages"';
             [~, ~] = system(sCommand);
             
             sData = '';
@@ -1140,7 +1225,7 @@ classdef IHAB_SystemCheck < handle
                 pause(0.1);
             end
             
-            sCommand = 'adb shell am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body "Finished"';
+            sCommand = 'adb shell "am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body ''Finished'' -n com.example.IHABSystemCheck/.IntentReceiver --include-stopped-packages"';
             [~, ~] = system(sCommand);
             
             obj.finishTFMeasurement();
@@ -1154,7 +1239,7 @@ classdef IHAB_SystemCheck < handle
             end
             [~, ~] =  system(['adb pull sdcard/IHABSystemCheck/cache/SystemCheck.wav ', pwd, filesep, 'cache']);
             vRecording = audioread([pwd, filesep, 'cache', filesep, 'SystemCheck.wav']);
-            delete([pwd, filesep, 'cache', filesep, 'SystemCheck.wav']);
+            %delete([pwd, filesep, 'cache', filesep, 'SystemCheck.wav']);
         end
         
         function [] = callbackSaveToDisk(obj, ~, ~)
@@ -1199,7 +1284,7 @@ classdef IHAB_SystemCheck < handle
             vStatus = [];
             
             % Erase folder
-            sCommand_erase_quest = [obj.prefix, 'adb shell rm -r /sdcard/ihab/calibration'];
+            sCommand_erase_quest = [obj.prefix, 'adb shell rm -r /sdcard/IHAB/calibration'];
             [status, ~] = system(sCommand_erase_quest);
             vStatus = [vStatus, status];
             
@@ -1209,7 +1294,7 @@ classdef IHAB_SystemCheck < handle
             vStatus = [vStatus, status];
             
             % Copy calibration data to phone
-            sCommand_log = [obj.prefix, 'adb push calibration/', obj.sFileName_Calib,' sdcard/ihab/calibration/'];
+            sCommand_log = [obj.prefix, 'adb push calibration/', obj.sFileName_Calib,' sdcard/IHAB/calibration/calib.txt'];
             [status, ~] = system(sCommand_log);
             vStatus = [vStatus, status];
             
@@ -1218,6 +1303,9 @@ classdef IHAB_SystemCheck < handle
             [status, ~] = system(sCommand_erase_quest);
             vStatus = [vStatus, status];
             
+            sCommand = 'adb shell "am broadcast -a com.example.IHABSystemCheck.intent.TEST --es sms_body ''StoreCalibration'' -n com.example.IHABSystemCheck/.IntentReceiver --include-stopped-packages"';
+            [~, ~] = system(sCommand);
+
             %TODO: Check whether file is there
             if true
                 % Announce all is good
@@ -1248,21 +1336,5 @@ classdef IHAB_SystemCheck < handle
         end
         
     end
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
 end
